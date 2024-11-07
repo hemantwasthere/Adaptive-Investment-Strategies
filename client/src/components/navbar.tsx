@@ -33,27 +33,25 @@ const Navbar: React.FC = () => {
   });
 
   return (
-    <header className="sticky top-0 z-30 bg-black/40">
+    <header className="sticky top-0 z-30 border-b border-accent/10 bg-black/40">
       <MaxWidthWrapper className="flex h-20 items-center justify-between">
-        <p className="text-base text-white hover:underline">
+        <p className="text-base text-white">
           Adaptive Investment Strategies{" "}
-          <span className="ml-1 -motion-translate-x-in-100 motion-translate-y-in-75">
-            🚀
-          </span>
+          <span className="ml-1 select-none">🚀</span>
         </p>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="text-white rounded-md focus-visible:ring-0 transition-all focus-visible:outline-0 select-none group">
+          <DropdownMenuTrigger className="group select-none rounded-md text-white transition-all focus-visible:outline-0 focus-visible:ring-0">
             {!address && isConnecting && (
-              <div className="flex items-center justify-center gap-2 group-focus-visible:outline-1 group-focus-visible:outline-white border border-accent/10 rounded-md h-9 w-[9.5rem]">
+              <div className="flex h-9 w-[9.5rem] items-center justify-center gap-2 rounded-md border border-accent/10 group-focus-visible:outline-1 group-focus-visible:outline-white">
                 <Image
                   src={starkProfile?.profilePicture || "/fallback-avatar.svg"}
-                  className="rounded-full shrink-0"
+                  className="shrink-0 rounded-full"
                   width={20}
                   height={20}
                   alt="skeleton-pfp"
                 />
-                <p className="flex items-center text-sm gap-1">
+                <p className="flex items-center gap-1 text-sm">
                   <Skeleton className="h-5 w-full" />
                   <ChevronDown className="size-3" />
                 </p>
@@ -61,15 +59,15 @@ const Navbar: React.FC = () => {
             )}
 
             {address && !isConnecting && (
-              <div className="flex items-center justify-center gap-2 group-focus-visible:outline-1 group-focus-visible:outline-white border border-accent/10 rounded-md h-9 w-[9.5rem]">
+              <div className="flex h-9 w-[9.5rem] items-center justify-center gap-2 rounded-md border border-accent/10 group-focus-visible:outline-1 group-focus-visible:outline-white">
                 <Image
                   src={starkProfile?.profilePicture || "/fallback-avatar.svg"}
-                  className="rounded-full shrink-0"
+                  className="shrink-0 rounded-full"
                   width={20}
                   height={20}
                   alt="strkprofile-pfp"
                 />
-                <p className="flex items-center text-sm gap-1">
+                <p className="flex items-center gap-1 text-sm">
                   {starkProfile && starkProfile.name
                     ? truncate(starkProfile.name, 6, 6)
                     : shortAddress(address, 4, 4)}
@@ -82,14 +80,14 @@ const Navbar: React.FC = () => {
               <p
                 className={cn(
                   buttonVariants(),
-                  "flex items-center text-sm gap-1 select-none w-[9.5rem] justify-center"
+                  "flex w-[9.5rem] select-none items-center justify-center gap-1 text-sm",
                 )}
               >
                 Connect Wallet <ChevronDown className="!size-3" />
               </p>
             )}
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="border border-accent/10 bg-primary/90 min-w-[9rem] text-white">
+          <DropdownMenuContent className="min-w-[9rem] border border-accent/10 bg-primary/90 text-white">
             {!address ? (
               connectors?.map((connector) => (
                 <DropdownMenuItem

@@ -13,9 +13,9 @@ const Tabs = () => {
   return (
     <ShadCNTabs
       defaultValue="deposit"
-      className="col-span-2 w-full h-full mt-4 lg:mt-0"
+      className="col-span-2 mt-4 h-full w-full lg:mt-0"
     >
-      <TabsList className="w-full mb-2 border border-accent/10 bg-transparent">
+      <TabsList className="mb-2 w-full border border-accent/10 bg-transparent">
         <TabsTrigger
           value="deposit"
           className="w-full data-[state=active]:bg-accent/20 data-[state=active]:text-white/80"
@@ -32,14 +32,14 @@ const Tabs = () => {
 
       <TabsContent
         value="deposit"
-        className="w-full h-[calc(19rem-36px)] bg-black/40 rounded-md text-white py-3 px-4"
+        className="h-[calc(19rem-36px)] w-full rounded-md border border-accent/10 bg-black/40 px-4 py-3 text-white"
       >
         <Deposit />
       </TabsContent>
 
       <TabsContent
         value="withdraw"
-        className="w-full h-[calc(19rem-36px)] bg-black/40 rounded-md text-white py-2 px-4"
+        className="h-[calc(19rem-36px)] w-full rounded-md border border-accent/10 bg-black/40 px-4 py-3 text-white"
       >
         <Withdraw />
       </TabsContent>

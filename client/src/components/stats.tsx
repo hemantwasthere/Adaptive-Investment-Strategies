@@ -4,8 +4,8 @@ import Holdings from "./holdings";
 
 const Stats = () => {
   return (
-    <div className="col-span-3 h-full bg-black/40 rounded-md py-4 px-5">
-      <h4 className="text-white/90 text-3xl mb-2">How does it work?</h4>
+    <div className="col-span-3 h-full rounded-md border border-accent/10 bg-black/40 px-5 py-4">
+      <h4 className="mb-2 text-3xl text-white/90">How does it work?</h4>
       <p className="text-muted-foreground">
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Inventore nam
         quia eius aliquam, itaque reprehenderit nihil sed ex laudantium eaque

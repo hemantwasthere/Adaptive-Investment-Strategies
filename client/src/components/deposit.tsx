@@ -24,7 +24,7 @@ const formSchema = z.object({
       let n = Number(v);
       return !isNaN(n) && v?.length > 0;
     },
-    { message: "Invalid eth amount" }
+    { message: "Invalid eth amount" },
   ),
 });
 
@@ -62,12 +62,12 @@ const Deposit: React.FC = () => {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <div className="h-full mt-2 flex flex-col justify-between">
+          <div className="mt-2 flex h-full flex-col justify-between">
             <FormField
               control={form.control}
               name="ethAmount"
               render={({ field }) => (
-                <FormItem className="space-y-1 relative">
+                <FormItem className="relative space-y-1">
                   <FormLabel className="text-muted-foreground">
                     your eth amount
                   </FormLabel>
@@ -79,7 +79,7 @@ const Deposit: React.FC = () => {
                         {...field}
                       />
                       <Button
-                        className="uppercase h-6 bg-primary text-xs absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md border-accent/10 hover:bg-accent/10 hover:text-white"
+                        className="absolute right-1.5 top-1/2 h-6 -translate-y-1/2 rounded-md border-accent/10 bg-primary text-xs uppercase hover:bg-accent/10 hover:text-white"
                         variant="outline"
                         type="button"
                         onClick={() => {
@@ -94,7 +94,7 @@ const Deposit: React.FC = () => {
                             setEthAmount(data?.formatted?.toString());
                             form.setValue(
                               "ethAmount",
-                              data?.formatted?.toString()
+                              data?.formatted?.toString(),
                             );
                             form.clearErrors("ethAmount");
                           }
@@ -109,7 +109,7 @@ const Deposit: React.FC = () => {
               )}
             />
 
-            <div className="mt-7 px-2 space-y-1">
+            <div className="mt-7 space-y-1 px-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Exchange rate:</span>
                 <span>1 ETH = 1 wETH</span>
@@ -127,7 +127,7 @@ const Deposit: React.FC = () => {
 
           <Button
             type="submit"
-            className="text-white/70 w-fit flex justify-end ml-auto mt-5 transition-all hover:text-white/90"
+            className="ml-auto mt-5 flex w-fit justify-end text-white/70 transition-all hover:text-white/90"
           >
             {Number(form.watch("ethAmount")) > 0
               ? `Deposit: ${form.watch("ethAmount")} ETH`

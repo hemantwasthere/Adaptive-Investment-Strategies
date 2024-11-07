@@ -18,6 +18,6 @@ export function truncate(str: string, startChars: number, endChars: number) {
 
   return `${str.slice(0, startChars)}...${str.slice(
     str.length - endChars,
-    str.length
+    str.length,
   )}`;
 }
