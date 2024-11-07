@@ -147,7 +147,12 @@ const Deposit: React.FC = () => {
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             {Number(form.watch("ethAmount")) > 0
-              ? `Deposit: ${form.watch("ethAmount")} ETH`
+              ? `Deposit: ${
+                  form.watch("ethAmount").includes(".") &&
+                  form.watch("ethAmount").split(".")[1].length > 7
+                    ? `${Number(form.watch("ethAmount")).toFixed(3).slice(0, 6)}...${form.watch("ethAmount").slice(-3)}`
+                    : Number(form.watch("ethAmount")).toFixed(2)
+                } ETH`
               : "Deposit"}
           </motion.button>
         </form>
