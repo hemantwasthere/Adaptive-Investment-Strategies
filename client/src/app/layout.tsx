@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={cn(figTree.className, "antialiased")}>
+      <body className={cn(figTree.className, "bg-primary antialiased")}>
         <Providers>
           {children}
           <Toaster />
