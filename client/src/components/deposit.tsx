@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAccount, useBalance } from "@starknet-react/core";
 import React from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -9,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { useAccount, useBalance } from "@starknet-react/core";
 
 const formSchema = z.object({
   ethAmount: z.string().refine(
@@ -27,20 +26,12 @@ const formSchema = z.object({
     },
     { message: "Invalid eth amount" }
   ),
-  wEthAmount: z.string().refine(
-    (v) => {
-      let n = Number(v);
-      return !isNaN(n) && v?.length > 0;
-    },
-    { message: "Invalid wEth amount" }
-  ),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
 
 const Deposit: React.FC = () => {
   const [ethAmount, setEthAmount] = React.useState("");
-  const [wEthAmount, setWEthAmount] = React.useState("");
 
   const { address } = useAccount();
   const { data } = useBalance({
@@ -51,7 +42,6 @@ const Deposit: React.FC = () => {
     resolver: zodResolver(formSchema),
     values: {
       ethAmount: ethAmount,
-      wEthAmount: wEthAmount,
     },
     mode: "onChange",
   });
@@ -63,26 +53,21 @@ const Deposit: React.FC = () => {
   };
 
   React.useEffect(() => {
-    if (!address) {
-      setEthAmount("");
-      setWEthAmount("");
-    }
+    if (!address) setEthAmount("");
   }, [address]);
 
   return (
-    <div className="">
-      <h4 className="flex items-center text-xl">
-        Pool Pair -<span className="ml-1">eth to weth</span>
-      </h4>
+    <div className="h-full">
+      <h5 className="flex items-center text-xl">ETH Pool</h5>
 
-      <div className="mt-2">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="h-full mt-2 flex flex-col justify-between">
             <FormField
               control={form.control}
               name="ethAmount"
               render={({ field }) => (
-                <FormItem className="space-y-1">
+                <FormItem className="space-y-1 relative">
                   <FormLabel className="text-muted-foreground">
                     your eth amount
                   </FormLabel>
@@ -105,44 +90,51 @@ const Deposit: React.FC = () => {
                               title: "Please connect your wallet",
                             });
                           }
-                          data && setEthAmount(data?.formatted?.toString());
+                          if (data) {
+                            setEthAmount(data?.formatted?.toString());
+                            form.setValue(
+                              "ethAmount",
+                              data?.formatted?.toString()
+                            );
+                            form.clearErrors("ethAmount");
+                          }
                         }}
                       >
                         max
                       </Button>
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="absolute -bottom-5 left-1 text-xs" />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="wEthAmount"
-              render={({ field }) => (
-                <FormItem className="relative space-y-1">
-                  <FormLabel className="text-muted-foreground">
-                    your wEth amount
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      className="border-accent/10"
-                      placeholder="1.3"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="mt-7 px-2 space-y-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Exchange rate:</span>
+                <span>1 ETH = 1 wETH</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Deposit Fee:</span>
+                <span>1.00%</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Staking limit:</span>
+                <span>3.04M of 20.00M</span>
+              </div>
+            </div>
+          </div>
 
-            <Button type="submit" className="mt-4">
-              Deposit
-            </Button>
-          </form>
-        </Form>
-      </div>
+          <Button
+            type="submit"
+            className="text-white/70 w-fit flex justify-end ml-auto mt-5 transition-all hover:text-white/90"
+          >
+            {Number(form.watch("ethAmount")) > 0
+              ? `Deposit: ${form.watch("ethAmount")} ETH`
+              : "Deposit"}
+          </Button>
+        </form>
+      </Form>
     </div>
   );
 };

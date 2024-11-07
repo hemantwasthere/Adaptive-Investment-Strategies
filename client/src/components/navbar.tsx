@@ -33,7 +33,7 @@ const Navbar: React.FC = () => {
   });
 
   return (
-    <header className="sticky top-0 z-30 bg-black">
+    <header className="sticky top-0 z-30 bg-black/40">
       <MaxWidthWrapper className="flex h-20 items-center justify-between">
         <p className="text-base text-white hover:underline">
           Adaptive Investment Strategies
