@@ -6,6 +6,7 @@ import {
   useDisconnect,
   useStarkProfile,
 } from "@starknet-react/core";
+import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import React from "react";
@@ -32,12 +33,25 @@ const Navbar: React.FC = () => {
     useDefaultPfp: true,
   });
 
+  const rocketAnimation = {
+    initial: { y: 0 },
+    animate: { y: [-15, 15, -15] },
+    transition: { duration: 1, repeat: Infinity, ease: "easeInOut" },
+  };
+
   return (
     <header className="sticky top-0 z-30 border-b border-accent/10 bg-black/40">
       <MaxWidthWrapper className="flex h-20 items-center justify-between">
         <p className="text-base text-white">
           Adaptive Investment Strategies{" "}
-          <span className="ml-1 select-none">🚀</span>
+          <motion.span
+            className="ml-1 select-none"
+            initial={{ y: 0 }}
+            animate={{ y: [-15, 15, -15] }}
+            transition={{ duration: 1, repeat: 1, ease: "easeInOut" }}
+          >
+            🚀
+          </motion.span>
         </p>
 
         <DropdownMenu>

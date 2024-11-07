@@ -2,11 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAccount, useBalance } from "@starknet-react/core";
+import { motion } from "framer-motion";
 import React from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   ethAmount: z.string().refine(
@@ -78,9 +80,11 @@ const Withdraw: React.FC = () => {
                         placeholder="0.43"
                         {...field}
                       />
-                      <Button
-                        className="absolute right-1.5 top-1/2 h-6 -translate-y-1/2 rounded-md border-accent/10 bg-primary text-xs uppercase hover:bg-accent/10 hover:text-white"
-                        variant="outline"
+                      <motion.button
+                        className={cn(
+                          buttonVariants({ variant: "outline" }),
+                          "absolute right-[0.4rem] top-[18%] h-6 rounded-md border-accent/10 bg-primary text-xs uppercase hover:bg-accent/10 hover:text-white",
+                        )}
                         type="button"
                         onClick={() => {
                           if (!address) {
@@ -99,9 +103,16 @@ const Withdraw: React.FC = () => {
                             form.clearErrors("ethAmount");
                           }
                         }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 10,
+                        }}
                       >
                         max
-                      </Button>
+                      </motion.button>
                     </div>
                   </FormControl>
                   <FormMessage className="absolute -bottom-5 left-1 text-xs" />
@@ -125,14 +136,20 @@ const Withdraw: React.FC = () => {
             </div>
           </div>
 
-          <Button
+          <motion.button
             type="submit"
-            className="ml-auto mt-5 flex w-fit justify-end text-white/70 transition-all hover:text-white/90"
+            className={cn(
+              buttonVariants(),
+              "ml-auto mt-5 flex w-fit justify-end text-white/70 transition-all hover:text-white/90",
+            )}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             {Number(form.watch("ethAmount")) > 0
               ? `Withdraw: ${form.watch("ethAmount")} ETH`
               : "Withdraw"}
-          </Button>
+          </motion.button>
         </form>
       </Form>
     </div>
