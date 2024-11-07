@@ -34,25 +34,25 @@ const Navbar: React.FC = () => {
   });
 
   const rocketAnimation = {
-    initial: { y: 0 },
-    animate: { y: [-15, 15, -15] },
-    transition: { duration: 1, repeat: Infinity, ease: "easeInOut" },
+    initial: { x: 0, y: 0 },
+    animate: { x: [-5, 5, -5], y: [5, -5, 5] },
+    transition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
   };
 
   return (
     <header className="sticky top-0 z-30 border-b border-accent/10 bg-black/40">
       <MaxWidthWrapper className="flex h-20 items-center justify-between">
-        <p className="text-base text-white">
-          Adaptive Investment Strategies{" "}
-          <motion.span
-            className="ml-1 select-none"
-            initial={{ y: 0 }}
-            animate={{ y: [-15, 15, -15] }}
-            transition={{ duration: 1, repeat: 1, ease: "easeInOut" }}
-          >
-            🚀
-          </motion.span>
-        </p>
+        <div className="flex items-center text-base text-white">
+          <p>Adaptive Investment Strategies </p>
+          <motion.img
+            src="/rocket.png"
+            className="ml-3 select-none"
+            width={20}
+            height={20}
+            alt="rocket"
+            {...rocketAnimation}
+          />
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger className="group select-none rounded-md text-white transition-all focus-visible:outline-0 focus-visible:ring-0">
