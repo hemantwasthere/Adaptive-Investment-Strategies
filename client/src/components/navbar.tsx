@@ -17,11 +17,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn, shortAddress, truncate } from "@/lib/utils";
+
 import MaxWidthWrapper from "./max-width-wrapper";
 
 const Navbar: React.FC = () => {
-  const { address } = useAccount();
+  const { address, isConnecting } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnectAsync } = useDisconnect();
 
@@ -29,8 +31,6 @@ const Navbar: React.FC = () => {
     address,
     useDefaultPfp: true,
   });
-
-  console.log(starkProfile);
 
   return (
     <header className="sticky top-0 z-30 bg-black">
@@ -41,30 +41,48 @@ const Navbar: React.FC = () => {
 
         <DropdownMenu>
           <DropdownMenuTrigger className="text-white rounded-md focus-visible:ring-0 transition-all focus-visible:outline-0 select-none group">
-            {address ? (
-              <div className="flex items-center gap-2 group-focus-visible:outline-1 group-focus-visible:outline-white">
+            {!address && isConnecting && (
+              <div className="flex items-center justify-center gap-2 group-focus-visible:outline-1 group-focus-visible:outline-white border border-accent/10 rounded-md h-9 w-[9.5rem]">
                 <Image
                   src={starkProfile?.profilePicture || "/fallback-avatar.svg"}
                   className="rounded-full shrink-0"
                   width={20}
                   height={20}
-                  alt="pfp"
+                  alt="skeleton-pfp"
                 />
-                <p className="flex items-center gap-1">
-                  {starkProfile && starkProfile.name
-                    ? truncate(starkProfile.name, 6, 6)
-                    : shortAddress(address, 4, 4)}{" "}
+                <p className="flex items-center text-sm gap-1">
+                  <Skeleton className="h-5 w-full" />
                   <ChevronDown className="size-3" />
                 </p>
               </div>
-            ) : (
+            )}
+
+            {address && !isConnecting && (
+              <div className="flex items-center justify-center gap-2 group-focus-visible:outline-1 group-focus-visible:outline-white border border-accent/10 rounded-md h-9 w-[9.5rem]">
+                <Image
+                  src={starkProfile?.profilePicture || "/fallback-avatar.svg"}
+                  className="rounded-full shrink-0"
+                  width={20}
+                  height={20}
+                  alt="strkprofile-pfp"
+                />
+                <p className="flex items-center text-sm gap-1">
+                  {starkProfile && starkProfile.name
+                    ? truncate(starkProfile.name, 6, 6)
+                    : shortAddress(address, 4, 4)}
+                  <ChevronDown className="size-3" />
+                </p>
+              </div>
+            )}
+
+            {!address && !isConnecting && (
               <p
                 className={cn(
-                  "flex items-center gap-1 select-none",
-                  buttonVariants()
+                  buttonVariants(),
+                  "flex items-center text-sm gap-1 select-none w-[9.5rem] justify-center"
                 )}
               >
-                Connect Wallet <ChevronDown className="size-3" />
+                Connect Wallet <ChevronDown className="!size-3" />
               </p>
             )}
           </DropdownMenuTrigger>

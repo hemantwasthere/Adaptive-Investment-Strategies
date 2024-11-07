@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 
+import Providers from "@/components/providers";
 import { cn } from "@/lib/utils";
-import Providers from "./components/providers";
 import "./globals.css";
 
 const figTree = Figtree({ subsets: ["latin-ext"] });
