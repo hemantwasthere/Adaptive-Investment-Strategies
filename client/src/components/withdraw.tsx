@@ -142,7 +142,7 @@ const Withdraw: React.FC = () => {
               buttonVariants(),
               "ml-auto mt-5 flex w-fit justify-end text-white/70 transition-all hover:text-white/90",
             )}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.9 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
