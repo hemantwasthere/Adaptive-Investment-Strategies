@@ -36,7 +36,10 @@ const Navbar: React.FC = () => {
     <header className="sticky top-0 z-30 bg-black/40">
       <MaxWidthWrapper className="flex h-20 items-center justify-between">
         <p className="text-base text-white hover:underline">
-          Adaptive Investment Strategies
+          Adaptive Investment Strategies{" "}
+          <span className="ml-1 -motion-translate-x-in-100 motion-translate-y-in-75">
+            🚀
+          </span>
         </p>
 
         <DropdownMenu>
