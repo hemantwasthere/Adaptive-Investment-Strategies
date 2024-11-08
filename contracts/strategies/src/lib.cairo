@@ -8,8 +8,9 @@ mod interfaces {
     pub mod IAutoVault;
     pub mod IERC20Camel;
     pub mod IERC4626;
-    // pub mod ICLVault;
-    pub mod IERC2020Strat;
+    pub mod ICLVault;
+    pub mod IOracle;
+    pub mod IERC20Strat;
     pub mod IEkuboCore;
     pub mod IEkuboPositions;
     pub mod IEkuboPositionsNFT;

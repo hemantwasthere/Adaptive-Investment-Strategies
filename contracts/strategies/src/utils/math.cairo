@@ -32,7 +32,7 @@ pub mod Math {
         return (x1, y1);
     }
 
-    fn max(a: u128, b: u128) -> u128 {
+    pub fn max(a: u128, b: u128) -> u128 {
         let mut max: u128 = 0;
         if (a >= b) {
             max = a;
@@ -42,7 +42,7 @@ pub mod Math {
         return max;
     }
 
-    fn min(a: u128, b: u128) -> u128 {
+    pub fn min(a: u128, b: u128) -> u128 {
         let mut min: u128 = 0;
         if (a <= b) {
             min = a;

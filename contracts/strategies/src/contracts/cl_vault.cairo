@@ -3,25 +3,38 @@ mod CLVault {
     use strategies::interfaces::ICLVault::ICLVault;
     use strategies::interfaces::IERC20Strat::{IERC20StratDispatcher, IERC20StratDispatcherTrait};
     use strategies::interfaces::IEkuboCore::{
-        IEkuboCoreDispatcher, IEkuboCoreDispatcherTrait, Bounds, PoolKey, PositionKey
+        IEkuboCoreDispatcher, IEkuboCoreDispatcherTrait
     };
+    use strategies::interfaces::IEkuboCore::{Bounds, PoolKey, PositionKey};
+    use strategies::interfaces::IEkuboPositions::{IEkuboDispatcher, IEkuboDispatcherTrait};
+    use strategies::interfaces::IOracle::{IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait, PriceWithUpdateTime};
     use ekubo::types::position::Position;
     use strategies::utils::math::Math;
     use strategies::utils::helpers::ERC20Helper;
     use strategies::utils::errors::Errors;
     use strategies::utils::constants::Constants::{LENDING, DEX, DECIMALS};
+
     use openzeppelin::token::erc721::interface::{ERC721ABIDispatcher, ERC721ABIDispatcherTrait};
-    use openzeppelin::introspection::src5::SRC5Component;
-    use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    // use openzeppelin::introspection::src5::SRC5Component;
+    // use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+
+
+    use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+
+    // ERC20 Mixin
+    #[abi(embed_v0)]
+    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
 
     use core::traits::{TryInto, Into};
     use core::array::ArrayTrait;
     use starknet::{ClassHash, ContractAddress, get_caller_address, get_contract_address};
 
-    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
-    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+    // component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+    // component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
     #[derive(Drop, Copy, Serde, starknet::Store)]
     pub struct Settings {
@@ -39,6 +52,8 @@ mod CLVault {
 
     #[storage]
     struct Storage {
+        #[substorage(v0)]
+        erc20: ERC20Component::Storage,
         admin: ContractAddress,
         primary_token: ContractAddress,
         secondary_token: ContractAddress,
@@ -50,6 +65,13 @@ mod CLVault {
         ekubo_core: ContractAddress,
         oracle: ContractAddress,
         cl_token: ContractAddress,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC20Event: ERC20Component::Event,
     }
 
 
@@ -83,7 +105,7 @@ mod CLVault {
     }
 
     #[abi(embed_v0)]
-    impl CLVaultImpl of CLVault<ContractState> {
+    impl CLVaultImpl of ICLVault<ContractState> {
         fn provide_liquidity(
             ref self: ContractState,
             primary_token_amount: u256,
@@ -115,7 +137,7 @@ mod CLVault {
             return (primary_token_amount, secondary_token_amount);
         }
 
-        fn get_position_key(ref self: ContractState) -> PositionKey {
+        fn get_position_key(self: @ContractState) -> PositionKey {
             let position_key = PositionKey {
                 salt: self.contract_nft_id.read(),
                 owner: get_contract_address(),
@@ -125,7 +147,7 @@ mod CLVault {
             position_key
         }
 
-        fn get_position(ref self: ContractState) -> Position {
+        fn get_position(self: @ContractState) -> Position {
             let position_key: PositionKey = self.get_position_key();
             let curr_position: Position = IEkuboCoreDispatcher {
                 contract_address: self.ekubo_core.read()
@@ -135,7 +157,7 @@ mod CLVault {
             curr_position
         }
 
-        fn get_sqrt_values(ref self: ContractState) -> (u128, u128, u128) {
+        fn get_sqrt_values(self: @ContractState) -> (u128, u128, u128) {
             let bounds = self.bounds_settings.read();
             let sqrtRatioA = bounds.lower.mag;
             let sqrtRatioB = bounds.upper.mag;
@@ -147,7 +169,7 @@ mod CLVault {
 
         fn getSettings(self: @ContractState) -> Settings {
             Settings {
-                asset: self.asset(),
+                asset: self.get_cl_token(),
                 primary_token: self.primary_token.read(),
                 secondary_token: self.secondary_token.read(),
                 ekubo_positions_contract: self.ekubo_positions_contract.read(),
@@ -207,7 +229,7 @@ mod CLVault {
 
         fn _calcualte_tokens_amount(self: @ContractState, liquidity: u256) -> (u256, u256) {
             let _liquidity: u128 = liquidity.try_into().unwrap();
-            let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = contract_state.get_sqrt_values();
+            let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = self.get_sqrt_values();
             let (x, y) = Math::calculateXandY(_liquidity, sqrtRatioA, sqrtRatioB, sqrtRatioCurrent);
             return (x, y);
         }

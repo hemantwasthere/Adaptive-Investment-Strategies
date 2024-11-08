@@ -1,8 +1,6 @@
 #[starknet::contract]
 mod AutoVault {
-    use starknet::{
-        ContractAddress, get_caller_address, get_contract_address, get_block_timestamp
-    };
+    use starknet::{ContractAddress, get_caller_address, get_contract_address, get_block_timestamp};
 
     use strategies::utils::errors::Errors;
     use strategies::utils::math::Math::{mul_div_down, mul_div_up};
@@ -11,10 +9,10 @@ mod AutoVault {
     use strategies::interfaces::IAutoVault::IAutoVault;
     use strategies::interfaces::IERC20Camel::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use strategies::interfaces::IERC4626::{IERC4626Dispatcher, IERC4626DispatcherTrait};
-    
 
 
-    use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    // use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
     // ERC20 Mixin
@@ -27,11 +25,10 @@ mod AutoVault {
     struct Storage {
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
-        token: ContractAddress, 
-        rebalancer: ContractAddress, 
+        token: ContractAddress,
+        rebalancer: ContractAddress,
         current_mode: u8,
-        strkFarm_auto_compound_vault: ContractAddress, 
-        
+        strkFarm_auto_compound_vault: ContractAddress,
     }
 
 
@@ -69,30 +66,29 @@ mod AutoVault {
     }
 
     #[constructor]
-        fn constructor(
-            ref self: ContractState,
-            name: ByteArray,
-            symbol: ByteArray,
-            _token: ContractAddress,
-            _admin: ContractAddress,
-            _rebalancer: ContractAddress,
-            _strkFarm_auto_compound_vault: ContractAddress,
-        ) {
-            // assert(!token.is_zero(), Errors::ZERO_ADDRESS);
-            // assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
+    fn constructor(
+        ref self: ContractState,
+        name: ByteArray,
+        symbol: ByteArray,
+        _token: ContractAddress,
+        _admin: ContractAddress,
+        _rebalancer: ContractAddress,
+        _strkFarm_auto_compound_vault: ContractAddress,
+    ) {
+        // assert(!token.is_zero(), Errors::ZERO_ADDRESS);
+        // assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
         //     self.accesscontrol.initializer();
         //     self._set_admin(_admin);
 
-            // TODO if felt, change the datatype of name and symbol to byteArray.
-            self.erc20.initializer(name, symbol);
-            self.token.write(_token);
-            self.rebalancer.write(_rebalancer);
-            self.strkFarm_auto_compound_vault.write(_strkFarm_auto_compound_vault);
-        }   
+        // TODO if felt, change the datatype of name and symbol to byteArray.
+        self.erc20.initializer(name, symbol);
+        self.token.write(_token);
+        self.rebalancer.write(_rebalancer);
+        self.strkFarm_auto_compound_vault.write(_strkFarm_auto_compound_vault);
+    }
 
     #[abi(embed_v0)]
     impl AutoVaultImpl of IAutoVault<ContractState> {
-    
         fn deposit(ref self: ContractState, assets: u256, receiver: ContractAddress) -> u256 {
             let _shares = self.preview_deposit(assets);
             self._deposit(get_caller_address(), receiver, assets, _shares);
@@ -109,10 +105,10 @@ mod AutoVault {
         fn withdraw(
             ref self: ContractState, assets: u256, receiver: ContractAddress, owner: ContractAddress
         ) -> u256 {
-            let shares = self.preview_withdraw(assets); 
-            let _assets = self.convert_to_assets(shares);           
+            let shares = self.preview_withdraw(assets);
+            let _assets = self.convert_to_assets(shares);
             self._withdraw(get_caller_address(), receiver, owner, _assets, shares);
-            return shares;            
+            return shares;
         }
 
 
@@ -124,7 +120,7 @@ mod AutoVault {
             return _assets;
         }
 
-        
+
         fn preview_deposit(self: @ContractState, assets: u256) -> u256 {
             self.convert_to_shares(assets)
         }
@@ -148,7 +144,6 @@ mod AutoVault {
             } else {
                 mul_div_down(assets, supply, self.total_assets())
             }
-
         }
 
         fn convert_to_assets(self: @ContractState, shares: u256) -> u256 {
@@ -161,19 +156,16 @@ mod AutoVault {
         }
 
 
-
         fn total_assets(self: @ContractState) -> u256 {
-            
             // balance in auto compound vault
-            let auto_comp_dispatcher : IERC4626Dispatcher = IERC4626Dispatcher { 
-                contract_address: self.strkFarm_auto_compound_vault.read() 
-            };    
+            let auto_comp_dispatcher: IERC4626Dispatcher = IERC4626Dispatcher {
+                contract_address: self.strkFarm_auto_compound_vault.read()
+            };
             let auto_compound_shares = auto_comp_dispatcher.balance_of(get_contract_address());
             let comp_asset_balance = auto_comp_dispatcher.convert_to_assets(auto_compound_shares);
 
             // TODO balance in CL vault.
             let cl_asset_balance = 0;
-
 
             // TODO replace by CL balance
             // NOTE total_assets = comp_asset_balance + cl_asset_balance
@@ -186,24 +178,14 @@ mod AutoVault {
             assert(get_caller_address() == self.rebalancer.read(), 'NOT AUTORIZE');
             assert(_mode == 1 || _mode == 2, 'incorrect mode'); // 1 for lending, 2 for CL
 
-            if(self.current_mode.read() != _mode ){
-                if(_mode == 1) {
-                    //TODO implement CL vault withdrawal and auto_compound vault deposit calls
-                } else {
-                    //TODO implement auto_compound vault withdrawal and CL vault deposit calls
+            if (self.current_mode.read() != _mode) {
+                if (_mode == 1) { //TODO implement CL vault withdrawal and auto_compound vault deposit calls
+                } else { //TODO implement auto_compound vault withdrawal and CL vault deposit calls
                 }
-                self.emit(
-                    Rebalance {
-                        mode: _mode,
-                        timestamp: get_block_timestamp()
-                    }
-                );
+                self.emit(Rebalance { mode: _mode, timestamp: get_block_timestamp() });
                 self.current_mode.write(_mode);
-            } 
+            }
         }
-
-        
-
     }
 
 
@@ -219,17 +201,7 @@ mod AutoVault {
             self._erc20_camel().transferFrom(caller, get_contract_address(), assets);
             self.erc20.mint(receiver, shares);
 
-
-            self
-                .emit(
-                    Deposit {
-                        sender: caller,
-                        owner: receiver,
-                        assets: assets,
-                        shares: shares,
-                    }
-                );
-
+            self.emit(Deposit { sender: caller, owner: receiver, assets: assets, shares: shares, });
             // TODO call the lending/dex vaults.
 
         }
@@ -258,7 +230,6 @@ mod AutoVault {
                         share: shares,
                     }
                 );
-
             // TODO call the auto/CL vault for withdrawal
         }
 
@@ -267,5 +238,4 @@ mod AutoVault {
             IERC20CamelDispatcher { contract_address: self.token.read() }
         }
     }
-
 }
