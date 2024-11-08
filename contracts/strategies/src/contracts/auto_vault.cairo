@@ -24,6 +24,14 @@ mod AutoVault {
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
 
+    use strategies::components::swap::{
+        AvnuMultiRouteSwap,
+        AvnuMultiRouteSwapImpl
+        };
+    use strategies::interfaces::oracle::{IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait};
+
+
+
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -340,6 +348,16 @@ mod AutoVault {
         fn _erc20_camel(self: @ContractState) -> IERC20CamelDispatcher {
             IERC20CamelDispatcher { contract_address: self.token.read() }
         }
+
+
+        fn _swap(
+            ref self: ContractState,
+            swapInfo: AvnuMultiRouteSwap,
+        ) -> u256 {
+            return swapInfo.swap();
+        }
+
+
     }
 
 }
