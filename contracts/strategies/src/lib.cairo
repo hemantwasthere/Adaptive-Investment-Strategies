@@ -8,6 +8,7 @@ mod interfaces {
     pub mod IAutoVault;
     pub mod IERC20Camel;
     pub mod IERC4626;
+    pub mod oracle;
     pub mod ICLVault;
     pub mod IOracle;
     pub mod IERC20Strat;
@@ -21,4 +22,8 @@ mod utils {
     pub mod helpers;
     pub mod errors;
     pub mod constants;
+}
+
+mod components {
+    pub mod swap;
 }

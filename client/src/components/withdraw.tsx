@@ -155,7 +155,7 @@ const Withdraw: React.FC = () => {
                   form.watch("ethAmount").includes(".") &&
                   form.watch("ethAmount").split(".")[1].length > 7
                     ? `${Number(form.watch("ethAmount")).toFixed(3).slice(0, 6)}...${form.watch("ethAmount").slice(-3)}`
-                    : Number(form.watch("ethAmount")).toFixed(2)
+                    : Number(form.watch("ethAmount"))
                 } ETH`
               : "Withdraw"}
           </motion.button>
