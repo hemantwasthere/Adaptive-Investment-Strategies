@@ -5,6 +5,7 @@ mod AutoVault {
     };
 
     use strategies::utils::errors::Errors;
+    use strategies::utils::constants::Constants::{LENDING, DEX};
     use strategies::utils::math::Math::{mul_div_down, mul_div_up};
 
 
@@ -30,7 +31,7 @@ mod AutoVault {
         token: ContractAddress, 
         rebalancer: ContractAddress, 
         current_mode: u8,
-        strkFarm_auto_compound_vault: ContractAddress, 
+        auto_compound_vault: ContractAddress, 
         
     }
 
@@ -76,7 +77,7 @@ mod AutoVault {
             _token: ContractAddress,
             _admin: ContractAddress,
             _rebalancer: ContractAddress,
-            _strkFarm_auto_compound_vault: ContractAddress,
+            _auto_compound_vault: ContractAddress,
         ) {
             // assert(!token.is_zero(), Errors::ZERO_ADDRESS);
             // assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
@@ -87,7 +88,7 @@ mod AutoVault {
             self.erc20.initializer(name, symbol);
             self.token.write(_token);
             self.rebalancer.write(_rebalancer);
-            self.strkFarm_auto_compound_vault.write(_strkFarm_auto_compound_vault);
+            self.auto_compound_vault.write(_auto_compound_vault);
         }   
 
     #[abi(embed_v0)]
@@ -110,8 +111,7 @@ mod AutoVault {
             ref self: ContractState, assets: u256, receiver: ContractAddress, owner: ContractAddress
         ) -> u256 {
             let shares = self.preview_withdraw(assets); 
-            let _assets = self.convert_to_assets(shares);           
-            self._withdraw(get_caller_address(), receiver, owner, _assets, shares);
+            self._withdraw(get_caller_address(), receiver, owner, assets, shares);
             return shares;            
         }
 
@@ -166,7 +166,7 @@ mod AutoVault {
             
             // balance in auto compound vault
             let auto_comp_dispatcher : IERC4626Dispatcher = IERC4626Dispatcher { 
-                contract_address: self.strkFarm_auto_compound_vault.read() 
+                contract_address: self.auto_compound_vault.read() 
             };    
             let auto_compound_shares = auto_comp_dispatcher.balance_of(get_contract_address());
             let comp_asset_balance = auto_comp_dispatcher.convert_to_assets(auto_compound_shares);
@@ -174,8 +174,6 @@ mod AutoVault {
             // TODO balance in CL vault.
             let cl_asset_balance = 0;
 
-
-            // TODO replace by CL balance
             // NOTE total_assets = comp_asset_balance + cl_asset_balance
             let total_asset = comp_asset_balance + cl_asset_balance;
 
@@ -184,11 +182,23 @@ mod AutoVault {
 
         fn rebalance(ref self: ContractState, _mode: u8) {
             assert(get_caller_address() == self.rebalancer.read(), 'NOT AUTORIZE');
-            assert(_mode == 1 || _mode == 2, 'incorrect mode'); // 1 for lending, 2 for CL
+            assert(_mode == LENDING || _mode == DEX, 'incorrect mode'); // 1 for lending, 2 for CL
 
             if(self.current_mode.read() != _mode ){
-                if(_mode == 1) {
-                    //TODO implement CL vault withdrawal and auto_compound vault deposit calls
+                if(_mode == LENDING) {
+                    // CL vault withdrawal and auto_compound vault deposit calls
+                    let auto_comp_dispatcher : IERC4626Dispatcher = IERC4626Dispatcher { 
+                        contract_address: self.auto_compound_vault.read() 
+                    }; 
+                    let auto_compound_shares = auto_comp_dispatcher.balance_of(get_contract_address());
+                    let vault_asset_balance = auto_comp_dispatcher.convert_to_assets(auto_compound_shares);
+                    
+                    //withdrawal from CL vault.
+                    let asset = self._withdraw_from_cl(vault_asset_balance);
+                    
+                    // deposit to auto comp vault
+                    self._deposit_to_auto_comp(asset);
+
                 } else {
                     //TODO implement auto_compound vault withdrawal and CL vault deposit calls
                 }
@@ -219,7 +229,6 @@ mod AutoVault {
             self._erc20_camel().transferFrom(caller, get_contract_address(), assets);
             self.erc20.mint(receiver, shares);
 
-
             self
                 .emit(
                     Deposit {
@@ -231,6 +240,11 @@ mod AutoVault {
                 );
 
             // TODO call the lending/dex vaults.
+            if(self.current_mode.read() == 1) {
+                self._deposit_to_auto_comp(assets);
+            }else {
+                self._deposit_to_cl(assets);
+            }
 
         }
 
@@ -242,12 +256,12 @@ mod AutoVault {
             assets: u256,
             shares: u256,
         ) {
-            // // TODO check OZ spend allowance function,
-            // if (caller != owner) {
-            //     self.erc20.spend_allowance(owner, caller, shares);
-            // }
 
-            self.erc20.transferFrom(owner, get_contract_address(), shares);
+            // self.erc20.transferFrom(owner, get_contract_address(), shares);
+            if (caller != owner) {
+                self.erc20._spend_allowance(owner, caller, shares);
+            }
+            self.erc20.burn(owner, shares);
             self
                 .emit(
                     Withdraw {
@@ -259,7 +273,67 @@ mod AutoVault {
                     }
                 );
 
-            // TODO call the auto/CL vault for withdrawal
+            
+            if(self.current_mode.read() == 1) {
+
+                let asset = self._withdraw_from_auto_comp(assets);
+
+                // transfer ETH to user
+                self.erc20.transfer(receiver, asset);
+            }else {
+                let asset = self._withdraw_from_cl(assets);
+                self.erc20.transfer(receiver, asset);
+            }
+
+        }
+
+
+        // deposit to strkFarm auto compound vault.
+        fn _deposit_to_auto_comp(
+            ref self: ContractState,
+            assets: u256,
+        ) {
+            // Auto compound vault, ZKlend
+            let auto_comp_dispatcher : IERC4626Dispatcher = IERC4626Dispatcher { 
+                contract_address: self.auto_compound_vault.read() 
+            };   
+            // NOTE reciever of strkFarm LP will be auto vault
+            auto_comp_dispatcher.deposit(assets, get_contract_address());
+        }
+
+        fn _withdraw_from_auto_comp(
+            ref self: ContractState,
+            assets: u256, // ETH
+        ) -> u256 {
+            // Auto compound vault, ZKlend
+            let auto_comp_dispatcher : IERC4626Dispatcher = IERC4626Dispatcher { 
+                contract_address: self.auto_compound_vault.read() 
+            };   
+
+            let auto_comp_share = auto_comp_dispatcher.convert_to_shares(assets);
+            // NOTE reciever of strkFarm LP will be auto vault
+            let asset = auto_comp_dispatcher.redeem(auto_comp_share, get_contract_address(), get_contract_address());
+            return asset;
+        }
+
+
+        // TODO
+        // deposit to  CL vault.
+        fn _deposit_to_cl(
+            ref self: ContractState,
+            assets: u256,
+        ) {
+            
+        }
+
+        // TODO
+        // withdraw from CL
+        fn _withdraw_from_cl(
+            ref self: ContractState,
+            assets: u256,
+        ) -> u256 {
+            
+            0
         }
 
 
