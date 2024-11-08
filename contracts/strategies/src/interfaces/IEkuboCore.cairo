@@ -27,6 +27,8 @@ pub struct PositionKey {
 
 #[starknet::interface]
 pub trait IEkuboCore<TContractState> {
-  fn get_pool_price(ref self: TContractState, pool_key: PoolKey) -> u128;
-  fn get_position(ref self: TContractState, pool_key: PoolKey, position_key: PositionKey) -> Position;  
+    fn get_pool_price(ref self: TContractState, pool_key: PoolKey) -> u128;
+    fn get_position(
+        ref self: TContractState, pool_key: PoolKey, position_key: PositionKey
+    ) -> Position;
 }

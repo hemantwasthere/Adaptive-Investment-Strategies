@@ -6,6 +6,11 @@ pub trait IEkubo<TContractState> {
     fn mint_and_deposit(
         ref self: TContractState, pool_key: PoolKey, bounds: Bounds, min_liquidity: u128
     );
+
+    fn deposit(
+        ref self: TContractState, id: u256, pool_key: PoolKey, bounds: Bounds, min_liquidity: u128
+    );
+
     fn withdraw(
         ref self: TContractState,
         id: u64,

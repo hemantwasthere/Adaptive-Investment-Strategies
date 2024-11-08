@@ -2,12 +2,12 @@
 mod CLVault {
     use strategies::interfaces::ICLVault::ICLVault;
     use strategies::interfaces::IERC20Strat::{IERC20StratDispatcher, IERC20StratDispatcherTrait};
-    use strategies::interfaces::IEkuboCore::{
-        IEkuboCoreDispatcher, IEkuboCoreDispatcherTrait
-    };
+    use strategies::interfaces::IEkuboCore::{IEkuboCoreDispatcher, IEkuboCoreDispatcherTrait};
     use strategies::interfaces::IEkuboCore::{Bounds, PoolKey, PositionKey};
     use strategies::interfaces::IEkuboPositions::{IEkuboDispatcher, IEkuboDispatcherTrait};
-    use strategies::interfaces::IOracle::{IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait, PriceWithUpdateTime};
+    use strategies::interfaces::IOracle::{
+        IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait, PriceWithUpdateTime
+    };
     use ekubo::types::position::Position;
     use strategies::utils::math::Math;
     use strategies::utils::helpers::ERC20Helper;
@@ -65,6 +65,7 @@ mod CLVault {
         ekubo_core: ContractAddress,
         oracle: ContractAddress,
         cl_token: ContractAddress,
+        admin: ContractAddress,
     }
 
     #[event]
@@ -91,7 +92,8 @@ mod CLVault {
         ekubo_positions_nft: ContractAddress,
         ekubo_core: ContractAddress,
         oracle: ContractAddress,
-        cl_token: ContractAddress
+        cl_token: ContractAddress,
+        admin: ContractAddress,
     ) {
         self.primary_token.write(primary_token);
         self.secondary_token.write(secondary_token);
@@ -102,6 +104,7 @@ mod CLVault {
         self.ekubo_core.write(ekubo_core);
         self.oracle.write(oracle);
         self.cl_token.write(cl_token);
+        self.admin.write(admin);
     }
 
     #[abi(embed_v0)]
@@ -145,6 +148,56 @@ mod CLVault {
             };
 
             position_key
+        }
+
+        fn position_rebalance(ref self: ContractState, new_bounds: Bounds) {
+            self._assert_only_admin();
+            // Check if rebalancing is needed or not
+            let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = self.get_sqrt_values();
+            assert(
+                sqrtRatioCurrent <= sqrtRatioA || sqrtRatioCurrent >= sqrtRatioB,
+                'Rebalance not required'
+            );
+            // Withdraw the position ( Total Liquidity )
+            let position = self.get_position();
+            let liquidity = position.liquidity;
+            let disp = ERC721ABIDispatcher { contract_address: self.ekubo_positions_nft.read() };
+            let position_nft_id_u256: u256 = (self.contract_nft_id.read()).into();
+            assert(
+                disp.owner_of(position_nft_id_u256) == get_contract_address(),
+                'Owner is not CLVault'
+            );
+            IEkuboDispatcher { contract_address: contract_state.ekubo_positions_contract.read() }
+                .withdraw(
+                    ctr_nft_id,
+                    contract_state.pool_key.read(),
+                    contract_state.bounds_settings.read(),
+                    liquidity,
+                    0x00,
+                    0x00,
+                    true
+                );
+            // @note-question >> Do I need to burn NFT ID
+            // Check which amount is now zero is token a or token b
+            if (sqrtRatioCurrent <= sqrtRatioA) { // Amount of token b is zero
+            // Split this amount and do swap
+            } else { // Amount of token a is zero
+            // Split this amount and do swap
+            }
+            // @note >> Once swap is ready, using above conditions get primary_token_amount and secondary_token_amount
+            // Update the new bounds
+            self.bounds_settings.write(new_bounds);
+            // Calculate new liquidity
+            let new_liquidity = let liquidity = self._calculate_liquidity(primary_token_amount, secondary_token_amount); 
+            // Approve the EKubo Position contract
+            // deposit in new range
+            IEkuboDispatcher { contract_address: ekubo_positions_ctr }
+                .deposit(
+                    position_nft_id_u256.into(),
+                    self.pool_key.read(),
+                    self.bounds_settings.read(),
+                    (new_liquidity - 100)
+                );
         }
 
         fn get_position(self: @ContractState) -> Position {
@@ -273,6 +326,7 @@ mod CLVault {
             let contract_nft_id_u256: u256 = ctr_nft_id.into();
             assert(disp.owner_of(contract_nft_id_u256) == this, 'Owner not CLVault');
             contract_state.handle_fees(sqrtRatioA, sqrtRatioB, sqrtRatioCurrent);
+            // @note-anubhav >> Missing approval to Ekubo Position contract
             IEkuboDispatcher { contract_address: ekubo_positions_ctr }
                 .mint_and_deposit(
                     contract_state.pool_key.read(),
@@ -341,6 +395,10 @@ mod CLVault {
             assert(
                 ERC20Helper::balanceOf(ctr_secondary_token, this) == 0, 'Invalid wstETH removed'
             );
+        }
+
+        fn _assert_only_admin(self: @ContractState) {
+            assert(get_caller_address() == self.admin.read(), 'Not Authorized');
         }
     }
 }
