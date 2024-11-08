@@ -4,7 +4,7 @@ mod contracts {
 
 mod interfaces {
     pub mod IAutoVault;
-    pub mod ICLVault;
+    // pub mod ICLVault;
 }
 mod libs {}
 mod utils {
