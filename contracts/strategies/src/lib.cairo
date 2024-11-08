@@ -4,6 +4,8 @@ mod contracts {
 
 mod interfaces {
     pub mod IAutoVault;
+    pub mod IERC20Camel;
+    pub mod IERC4626;
     // pub mod ICLVault;
 }
 mod libs {}

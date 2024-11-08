@@ -17,4 +17,6 @@ pub trait IAutoVault<TContractState> {
     fn convert_to_assets(self: @TContractState, shares: u256) -> u256;
     fn convert_to_shares(self: @TContractState, assets: u256) -> u256;
     fn total_assets(self: @TContractState) -> u256;
+
+    fn rebalance(ref self: TContractState, _mode: u8);
 }
