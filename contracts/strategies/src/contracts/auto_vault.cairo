@@ -1,6 +1,5 @@
 #[starknet::contract]
 mod AutoVault {
-
     use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
 
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
