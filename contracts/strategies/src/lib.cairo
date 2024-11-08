@@ -6,7 +6,9 @@ mod contracts {
 
 mod interfaces {
     pub mod IAutoVault;
-    pub mod ICLVault;
+    pub mod IERC20Camel;
+    pub mod IERC4626;
+    // pub mod ICLVault;
     pub mod IERC2020Strat;
     pub mod IEkuboCore;
     pub mod IEkuboPositions;

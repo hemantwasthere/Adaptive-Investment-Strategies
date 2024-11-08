@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Info } from "lucide-react";
 
 const formSchema = z.object({
   ethAmount: z.string().refine(
@@ -76,7 +77,7 @@ const Withdraw: React.FC = () => {
                   <FormControl>
                     <div className="relative">
                       <Input
-                        className="border-accent/10"
+                        className="border-accent/10 pr-20 lg:pr-[4.6rem]"
                         placeholder="0.43"
                         {...field}
                       />
@@ -89,9 +90,12 @@ const Withdraw: React.FC = () => {
                         onClick={() => {
                           if (!address) {
                             return toast({
-                              type: "foreground",
-                              variant: "default",
-                              title: "Please connect your wallet",
+                              description: (
+                                <div className="flex items-center gap-2 text-white">
+                                  <Info className="size-5" />
+                                  Please connect your wallet
+                                </div>
+                              ),
                             });
                           }
                           if (data) {
