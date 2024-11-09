@@ -51,8 +51,6 @@ const Deposit: React.FC = () => {
 
   const onSubmit = async (values: FormValues) => {
     const { ethAmount } = values;
-
-    console.log(ethAmount);
   };
 
   React.useEffect(() => {
