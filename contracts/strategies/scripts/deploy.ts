@@ -49,8 +49,8 @@ async function main() {
         pool_key: {
           token0: '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7', // ETH
           token1: '0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2',  // wstETH
-          fee: 0, //@todo input correct fee
-          tick_spacing: 2,
+          fee: 30, // 0.3%
+          tick_spacing: cairo.uint256(1000001000000000000),
           extension: '0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f' // note check
         }, // pool_key
       ekubo_positions_nft: '0x07b696af58c967c1b14c9dde0ace001720635a660a8e90c565ea459345318b30', //ekubo_positions_nft

@@ -44,7 +44,6 @@ mod CLVault {
     use ekubo::types::i129::{i129};
 
 
-
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -83,13 +82,17 @@ mod CLVault {
         oracle: ContractAddress,
         cl_token: ContractAddress,
     ) {
+        // let ekubo_positions_contract: ContractAddress =
+        // contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>();
+        // let ekubo_positions_nft: ContractAddress =
+        // contract_address_const::<0x07b696af58c967c1b14c9dde0ace001720635a660a8e90c565ea459345318b30>();
+        // let ekubo_core: ContractAddress =
+        // contract_address_const::<0x00000005dd3D2F4429AF886cD1a3b08289DBcEa99A294197E9eB43b0e0325b4b>();
+        // let oracle: ContractAddress =
+        // contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>();
+        // // let cl_token: ContractAddress =
+        // contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>();
 
-        // let ekubo_positions_contract: ContractAddress = contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>();
-        // let ekubo_positions_nft: ContractAddress = contract_address_const::<0x07b696af58c967c1b14c9dde0ace001720635a660a8e90c565ea459345318b30>();
-        // let ekubo_core: ContractAddress = contract_address_const::<0x00000005dd3D2F4429AF886cD1a3b08289DBcEa99A294197E9eB43b0e0325b4b>();
-        // let oracle: ContractAddress = contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>();
-        // // let cl_token: ContractAddress = contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>();
-        
         // let lower_u128: u128 = 1180100000000000000;
         // let upper_u128: u128 = 1187680000000000000;
         // let _lower: i129 = lower_u128.try_into().unwrap();
@@ -98,16 +101,17 @@ mod CLVault {
         //         lower: _lower,
         //         upper: _upper,
         //     };
-        
 
         // let pool_key: PoolKey = PoolKey {
-        //         token0: contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>(), //ETH
-        //         token1: contract_address_const::<0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2>(), //wstETH
-        //         fee: 0,
+        //         token0:
+        //         contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>(),
+        //         //ETH token1:
+        //         contract_address_const::<0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2>(),
+        //         //wstETH fee: 0,
         //         tick_spacing: 2,
-        //         extension: contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>()
+        //         extension:
+        //         contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>()
         //     };
-        
 
         self.primary_token.write(constants::ETH());
         self.secondary_token.write(constants::wstETH());
