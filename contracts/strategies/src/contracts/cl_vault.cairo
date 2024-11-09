@@ -252,7 +252,8 @@ mod CLVault {
             let a_primary = primary_token_amount
                 * (sqrtRatioB.into() - sqrtRatioCurrent.into())
                 / (sqrtRatioB.into() - sqrtRatioA.into());
-            let b_secondary = (primary_token_amount - a_primary) / self.get_price(sqrtRatioCurrent.into());
+            let b_secondary = (primary_token_amount - a_primary)
+                / self.get_price(sqrtRatioCurrent.into());
             return (a_primary, b_secondary);
         }
 
@@ -293,7 +294,9 @@ mod CLVault {
             let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = self.get_sqrt_values();
             let liquidity_x = token_x_amount / (sqrtRatioCurrent.into() - sqrtRatioA.into());
             let liquidity_y = token_y_amount / (sqrtRatioB.into() - sqrtRatioCurrent.into());
-            let net_liquidity = Math::min(liquidity_x.try_into().unwrap(), liquidity_y.try_into().unwrap());
+            let net_liquidity = Math::min(
+                liquidity_x.try_into().unwrap(), liquidity_y.try_into().unwrap()
+            );
             return net_liquidity.into();
         }
 
@@ -336,18 +339,14 @@ mod CLVault {
                 self.contract_nft_id.write(nft_id);
             }
             let curr_position_before_deposit: Position = self.get_position();
-            let disp = ERC721ABIDispatcher {
-                contract_address: self.ekubo_positions_nft.read()
-            };
+            let disp = ERC721ABIDispatcher { contract_address: self.ekubo_positions_nft.read() };
             let contract_nft_id_u256: u256 = ctr_nft_id.into();
             assert(disp.owner_of(contract_nft_id_u256) == this, 'Owner not CLVault');
             self.handle_fees(sqrtRatioA, sqrtRatioB, sqrtRatioCurrent);
             // @note-anubhav >> Missing approval to Ekubo Position contract
             IEkuboDispatcher { contract_address: ekubo_positions_ctr }
                 .mint_and_deposit(
-                    self.pool_key.read(),
-                    self.bounds_settings.read(),
-                    (liquidity - 100)
+                    self.pool_key.read(), self.bounds_settings.read(), (liquidity - 100)
                 );
             let curr_position_after_deposit: Position = self.get_position();
             assert(
@@ -367,9 +366,7 @@ mod CLVault {
             assert(assets > 0, 'Liquidity remove cannot be zero');
             let liquidity: u128 = assets.try_into().unwrap();
             let curr_position_before_withdraw: Position = self.get_position();
-            let disp = ERC721ABIDispatcher {
-                contract_address: self.ekubo_positions_nft.read()
-            };
+            let disp = ERC721ABIDispatcher { contract_address: self.ekubo_positions_nft.read() };
             let ctr_nft_id = self.contract_nft_id.read();
             let contract_nft_id_u256: u256 = ctr_nft_id.into();
             assert(disp.owner_of(contract_nft_id_u256) == this, 'Owner is not CLVault');
