@@ -8,19 +8,22 @@ mod CLVault {
     use strategies::interfaces::IOracle::{
         IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait, PriceWithUpdateTime
     };
+    use strategies::interfaces::ICLVault::{Settings};
+
+
     use ekubo::types::position::Position;
     use strategies::utils::math::Math;
     use strategies::utils::helpers::ERC20Helper;
     use strategies::utils::errors::Errors;
     use strategies::utils::constants::Constants::{TWO_POWER_128, DECIMALS};
 
-    use openzeppelin::token::erc721::interface::{ERC721ABIDispatcher, ERC721ABIDispatcherTrait};
+    use openzeppelin_token::erc721::interface::{ERC721ABIDispatcher, ERC721ABIDispatcherTrait};
     // use openzeppelin::introspection::src5::SRC5Component;
     // use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
 
-    use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
     // ERC20 Mixin
@@ -36,19 +39,6 @@ mod CLVault {
     // component!(path: ERC20Component, storage: erc20, event: ERC20Event);
     // component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
-    #[derive(Drop, Copy, Serde, starknet::Store)]
-    pub struct Settings {
-        pub asset: ContractAddress,
-        pub primary_token: ContractAddress,
-        pub secondary_token: ContractAddress,
-        pub ekubo_positions_contract: ContractAddress,
-        pub bounds_settings: Bounds,
-        pub pool_key: PoolKey,
-        pub ekubo_positions_nft: ContractAddress,
-        pub contract_nft_id: u64,
-        pub ekubo_core: ContractAddress,
-        pub oracle: ContractAddress
-    }
 
     #[storage]
     struct Storage {
@@ -65,7 +55,6 @@ mod CLVault {
         ekubo_core: ContractAddress,
         oracle: ContractAddress,
         cl_token: ContractAddress,
-        admin: ContractAddress,
     }
 
     #[event]
@@ -117,7 +106,7 @@ mod CLVault {
         ) -> u256 {
             assert(primary_token_amount > 0, 'Invalid amount');
             assert(secondary_token_amount > 0, 'Invalid amount');
-            assert(!receiver.is_zero(), 'Zero address');
+            // assert(!receiver.is_zero(), 'Zero address');
             let liquidity = self._calculate_liquidity(primary_token_amount, secondary_token_amount);
             self._deposit(get_caller_address(), receiver, liquidity);
             IERC20StratDispatcher { contract_address: self.get_cl_token() }
@@ -128,7 +117,7 @@ mod CLVault {
         fn remove_liquidity(
             ref self: ContractState, liquidity: u256, receiver: ContractAddress
         ) -> (u256, u256) {
-            assert(!receiver.is_zero(), 'Zero address');
+            // assert(!receiver.is_zero(), 'Zero address');
             let cl_token = self.get_cl_token();
             let caller = get_caller_address();
             let user_liquidity = IERC20Dispatcher { contract_address: cl_token }.balance_of(caller);
@@ -150,6 +139,7 @@ mod CLVault {
             position_key
         }
 
+        // TODO fix the build issues
         fn position_rebalance(ref self: ContractState, new_bounds: Bounds) {
             self._assert_only_admin();
             // Check if rebalancing is needed or not
@@ -163,15 +153,16 @@ mod CLVault {
             let liquidity = position.liquidity;
             let disp = ERC721ABIDispatcher { contract_address: self.ekubo_positions_nft.read() };
             let position_nft_id_u256: u256 = (self.contract_nft_id.read()).into();
+            let position_nft_id_u64: u64 = (self.contract_nft_id.read()).into();
             assert(
                 disp.owner_of(position_nft_id_u256) == get_contract_address(),
                 'Owner is not CLVault'
             );
-            IEkuboDispatcher { contract_address: contract_state.ekubo_positions_contract.read() }
+            IEkuboDispatcher { contract_address: self.ekubo_positions_contract.read() }
                 .withdraw(
-                    ctr_nft_id,
-                    contract_state.pool_key.read(),
-                    contract_state.bounds_settings.read(),
+                    position_nft_id_u64,
+                    self.pool_key.read(),
+                    self.bounds_settings.read(),
                     liquidity,
                     0x00,
                     0x00,
@@ -192,12 +183,14 @@ mod CLVault {
                 ._calculate_liquidity(primary_token_amount, secondary_token_amount);
             // Approve the EKubo Position contract
             // deposit in new range
+
+            let new_liquidity_u128 : u128 = new_liquidity.try_into().unwrap();
             IEkuboDispatcher { contract_address: ekubo_positions_ctr }
                 .deposit(
                     position_nft_id_u256.into(),
                     self.pool_key.read(),
                     self.bounds_settings.read(),
-                    (new_liquidity - 100)
+                    (new_liquidity_u128 - 100)
                 );
         }
 
@@ -240,18 +233,27 @@ mod CLVault {
             return self.cl_token.read();
         }
 
+        // TODO fixed the typed mismatch issue.
         fn get_price(self: @ContractState, sqrtRatio: u256) -> u256 {
             assert(sqrtRatio > 0, 'Invalid sqrtRatio');
+            let TWO_POWER_256: u256 = TWO_POWER_128.try_into().unwrap();
             // Price = ( sqrtRatio / 2**128 )**2
-            let price = sqrtRatio / TWO_POWER_128;
+            let price = sqrtRatio / TWO_POWER_256;
             return (price * price);
         }
 
         fn split_primary_token(self: @ContractState, primary_token_amount: u256) -> (u256, u256) {
             let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = self.get_sqrt_values();
+
+            let sqrtRatioA_u256: u256 = sqrtRatioA.try_into().unwrap();
+            let sqrtRatioB_u256: u256 = sqrtRatioB.try_into().unwrap();
+            let sqrtRatioCurrent_u256: u256 = sqrtRatioCurrent.try_into().unwrap();
+
             let a_primary = primary_token_amount
-                * (sqrtRatioB - sqrtRatioCurrent)
-                / (sqrtRatioB - sqrtRatioA);
+                * (sqrtRatioB_u256 - sqrtRatioCurrent_u256)
+                / (sqrtRatioB_u256 - sqrtRatioA_u256);
+
+            //TODO pass price argument in get_price
             let b_secondary = (primary_token_amount - a_primary) / self.get_price();
             return (a_primary, b_secondary);
         }
@@ -291,10 +293,16 @@ mod CLVault {
             self: @ContractState, token_x_amount: u256, token_y_amount: u256
         ) -> u256 {
             let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = self.get_sqrt_values();
-            let liquidity_x = token_x_amount / (sqrtRatioCurrent - sqrtRatioA);
-            let liquidity_y = token_y_amount / (sqrtRatioB - sqrtRatioCurrent);
-            let net_liquidity = Math::min(liquidity_x.into(), liquidity_y.into());
-            return net_liquidity.into();
+
+            let token_x_amount_u128: u128 = token_x_amount.try_into().unwrap(); 
+            let token_y_amount_u128: u128 = token_y_amount.try_into().unwrap(); 
+
+            let liquidity_x = token_x_amount_u128 / (sqrtRatioCurrent - sqrtRatioA);
+            let liquidity_y = token_y_amount_u128 / (sqrtRatioB - sqrtRatioCurrent);
+
+            let net_liquidity = Math::min(liquidity_x, liquidity_y);
+            let net_liquidity_u256 : u256 = net_liquidity.into();
+            return net_liquidity_u256;
         }
 
         fn _calcualte_tokens_amount(self: @ContractState, liquidity: u256) -> (u256, u256) {
@@ -330,6 +338,7 @@ mod CLVault {
             ERC20Helper::strict_transfer_from(ctr_secondary_token, caller, ekubo_positions_ctr, y);
             let ctr_nft_id = contract_state.contract_nft_id.read();
             if (ctr_nft_id == 0) {
+                // TODO IEkuboNFTDispatcher not found
                 let nft_id: u64 = IEkuboNFTDispatcher {
                     contract_address: contract_state.ekubo_positions_nft.read()
                 }

@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod CLToken {
     use strategies::interfaces::IERC20Strat::IERC20Strat;
-    use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use starknet::{ContractAddress, get_caller_address};
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
@@ -40,9 +40,9 @@ mod CLToken {
             self.erc20.mint(recipient, amount);
             true
         }
-        fn burn(ref self: ContractState, amount: u256) -> bool {
+        fn burn(ref self: ContractState, account: ContractAddress, amount: u256) -> bool {
             self._assert_only_cl_vault();
-            self.erc20.burn(get_caller_address(), amount);
+            self.erc20.burn(account, amount);
             true
         }
     }

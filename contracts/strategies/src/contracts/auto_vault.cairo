@@ -193,7 +193,7 @@ mod AutoVault {
             );
             let price = CLVault.get_price();
             let y_primary = ( y * DECIMALS ) / price;
-            return y_primary;
+            return x + y_primary;
             
         }
 
@@ -377,6 +377,7 @@ mod AutoVault {
                 from_amount = 0;
             }
 
+            // NOTE :: wrong route.
             let swapInfo: AvnuMultiRouteSwap = AvnuMultiRouteSwap {
                 token_from_address: from_adress,
                 token_from_amount: from_amount,

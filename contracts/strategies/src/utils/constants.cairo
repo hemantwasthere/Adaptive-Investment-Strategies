@@ -5,12 +5,14 @@ pub mod Constants {
     pub const LENDING: u8 = 0;
     pub const DEX: u8 = 1;
     pub const DECIMALS: u256 = 1000000000000000000; // 18 Decimal units
+    
+    pub const BASIS_POINTS_FACTOR: u32 = 10000;
+    pub const TWO_POWER_128: u128 = 0xffffffffffffffffffffffffffffffff;
+    pub const TWO_POWER_256: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 }
 
 
-pub const BASIS_POINTS_FACTOR: u32 = 10000;
-pub const TWO_POWER_128: u128 = 0xffffffffffffffffffffffffffffffff;
-pub const TWO_POWER_256: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+
 
 // mainnet address
 pub fn STRK_ADDRESS() -> ContractAddress {
@@ -23,19 +25,13 @@ pub fn AVNU_EX() -> ContractAddress {
 
 // ETH-wstETH Pair
 pub fn NOSTRA_PAIR() -> ContractAddress {
-    contract_address_const::<>
-    0x0577521a1f005bd663d0fa7f37f0dbac4d7f55b98791d280b158346d9551ff2b
-    ()
+    contract_address_const::<0x0577521a1f005bd663d0fa7f37f0dbac4d7f55b98791d280b158346d9551ff2b>()
 }
 
 pub fn ETH() -> ContractAddress {
-    contract_address_const::<>
-    0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
-    ()
+    contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>()
 }
 
 pub fn wstETH() -> ContractAddress {
-    contract_address_const::<>
-    0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2
-    ()
+    contract_address_const::<0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2>()
 }

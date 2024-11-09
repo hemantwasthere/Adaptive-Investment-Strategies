@@ -1,6 +1,6 @@
 pub mod ERC20Helper {
     use starknet::ContractAddress;
-    use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
+    use openzeppelin_token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 
     pub fn balanceOf(token: ContractAddress, address: ContractAddress) -> u256 {
         dispatcher(token).balanceOf(address)
