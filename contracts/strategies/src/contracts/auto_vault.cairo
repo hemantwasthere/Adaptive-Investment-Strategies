@@ -103,6 +103,8 @@ mod AutoVault {
             .approve(self.cl_vault.read(), BoundedU256::max());
         IERC20Dispatcher { contract_address: self.auto_compound_vault.read() }
             .approve(self.auto_compound_vault.read(), BoundedU256::max());
+        IERC20Dispatcher { contract_address: constants::ETH() }
+            .approve(self.auto_compound_vault.read(), BoundedU256::max());
         self.current_mode.write(0); //LENDING
     }
 
