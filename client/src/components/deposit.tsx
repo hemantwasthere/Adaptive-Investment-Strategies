@@ -61,7 +61,14 @@ const Deposit: React.FC = () => {
 
   return (
     <div className="h-full">
-      <h5 className="flex items-center text-xl">ETH Pool</h5>
+      <div className="flex items-center justify-between">
+        <h5 className="flex items-center text-xl">ETH Pool</h5>
+
+        <div className="flex animate-pulse items-center gap-2 text-xs">
+          <div className="h-1 w-1 rounded-full bg-green-500" />
+          Devnet
+        </div>
+      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -126,16 +133,29 @@ const Deposit: React.FC = () => {
 
             <div className="mt-7 space-y-1 px-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>You will receive:</span>
+                <span>
+                  {Number(form.watch("ethAmount")) > 0
+                    ? `${
+                        form.watch("ethAmount").includes(".") &&
+                        form.watch("ethAmount").split(".")[1].length > 7
+                          ? `${Number(form.watch("ethAmount")).toFixed(3).slice(0, 6)}...${form.watch("ethAmount").slice(-3)}`
+                          : Number(form.watch("ethAmount"))
+                      } rbETH`
+                    : "0"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Exchange rate:</span>
-                <span>1 ETH = 1 wETH</span>
+                <span>1 ETH = 1 rbETH</span>
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Deposit Fee:</span>
-                <span>1.00%</span>
+                <span>Protocol Fee:</span>
+                <span>0.03%</span>
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Staking limit:</span>
-                <span>3.04M of 20.00M</span>
+              <div className="flex items-center justify-between text-xs font-semibold text-white/90">
+                <span>Mode:</span>
+                <span>LENDING</span>
               </div>
             </div>
           </div>
@@ -144,7 +164,7 @@ const Deposit: React.FC = () => {
             type="submit"
             className={cn(
               buttonVariants(),
-              "ml-auto mt-5 flex w-fit justify-end text-white/70 transition-all hover:text-white/90",
+              "ml-auto mt-4 flex w-fit justify-end text-white/70 transition-all hover:text-white/90",
             )}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.9 }}

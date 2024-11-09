@@ -1,6 +1,6 @@
 "use client";
 
-import { mainnet } from "@starknet-react/chains";
+import { devnet, mainnet } from "@starknet-react/chains";
 import {
   argent,
   braavos,
@@ -15,13 +15,12 @@ interface ProvidersProps {
   children: React.ReactNode;
 }
 
-const chains = [mainnet];
+const chains = [mainnet, devnet];
 
 const provider = jsonRpcProvider({
   rpc: () => {
     const args: RpcProviderOptions = {
-      nodeUrl:
-        "https://rpc.nethermind.io/mainnet-juno?apikey=t1HPjhplOyEQpxqVMhpwLGuwmOlbXN0XivWUiPAxIBs0kHVK",
+      nodeUrl: "http://127.0.0.1:5050",
       chainId: constants.StarknetChainId.SN_MAIN,
     };
     return args;
@@ -32,7 +31,7 @@ const Providers: React.FC<ProvidersProps> = ({ children }) => {
   const { connectors } = useInjectedConnectors({
     recommended: [argent(), braavos()],
     includeRecommended: "onlyIfNoConnectors",
-    order: "random",
+    order: "alphabetical",
   });
 
   if (typeof window === "undefined") return null;
