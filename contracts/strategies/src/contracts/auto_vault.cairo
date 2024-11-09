@@ -3,7 +3,7 @@ mod AutoVault {
     use starknet::{ContractAddress, get_caller_address, get_contract_address, get_block_timestamp};
 
     use strategies::utils::errors::Errors;
-    use strategies::utils::constants::Constants::{LENDING, DEX};
+    use strategies::utils::constants::Constants::{LENDING, DEX, DECIMALS};
     use strategies::utils::math::Math::{mul_div_down, mul_div_up};
 
 
@@ -28,7 +28,8 @@ mod AutoVault {
     use strategies::interfaces::oracle::{
         IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait
     };
-
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use integer::BoundedU256;
 
     #[storage]
     struct Storage {
@@ -86,18 +87,17 @@ mod AutoVault {
         _auto_compound_vault: ContractAddress,
         _cl_vault: ContractAddress,
     ) {
-        // assert(!token.is_zero(), Errors::ZERO_ADDRESS);
-        // assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
-        //     self.accesscontrol.initializer();
-        //     self._set_admin(_admin);
-
         // TODO if felt, change the datatype of name and symbol to byteArray.
         self.erc20.initializer(name, symbol);
         self.token.write(_token);
         self.rebalancer.write(_rebalancer);
         self.auto_compound_vault.write(_auto_compound_vault);
         self.cl_vault.write(_cl_vault);
-        // @note >> Approve the CLVault for max value of eth and wstETH
+        // @note >> Approve the CLVault for max value of eth and wstETH >> Done
+        IERC20Dispatcher { contract_address: constants::ETH() }
+            .approve(self.cl_vault.read(), BoundedU256::max());
+        IERC20Dispatcher { contract_address: constants::wstETH() }
+            .approve(self.cl_vault.read(), BoundedU256::max());
     }
 
     #[abi(embed_v0)]
@@ -169,20 +169,32 @@ mod AutoVault {
 
 
         fn total_assets(self: @ContractState) -> u256 {
-            // balance in auto compound vault
+            let total_asset = self.lending_assets() + self.dex_assets();
+            return total_asset;
+        }
+
+        // In ETH AutoCompoundVault
+        fn lending_assets(self: @ContractAddress) -> u256 {
             let auto_comp_dispatcher: IERC4626Dispatcher = IERC4626Dispatcher {
                 contract_address: self.auto_compound_vault.read()
             };
             let auto_compound_shares = auto_comp_dispatcher.balance_of(get_contract_address());
             let comp_asset_balance = auto_comp_dispatcher.convert_to_assets(auto_compound_shares);
+            return comp_asset_balance;
+        }
 
-            // TODO balance in CL vault.
-            let cl_asset_balance = 0;
-
-            // NOTE total_assets = comp_asset_balance + cl_asset_balance
-            let total_asset = comp_asset_balance + cl_asset_balance;
-
-            return total_asset;
+        // In CLVault
+        fn dex_assets(self: @ContractAddress) -> u256 {
+            let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
+            let auto_vault_liquidity = CLVault.balance_of(get_contract_address());
+            let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
+            let (x, y) = Math::calculateXandY(
+                auto_vault_liquidity, sqrtRatioA, sqrtRatioB, sqrtRatioCurrent
+            );
+            let price = CLVault.get_price();
+            let y_primary = ( y * DECIMALS ) / price;
+            return y_primary;
+            
         }
 
         fn rebalance(ref self: ContractState, _mode: u8) {
@@ -375,20 +387,10 @@ mod AutoVault {
                 integrator_fee_amount_bps: 0,
                 integrator_fee_recipient: get_contract_address(),
                 routes: array![constants::NOSTRA_PAIR()]
-            }
+            };
+
             return swapInfo.swap();
         }
     }
 }
 
-pub struct AvnuMultiRouteSwap {
-    pub token_from_address: ContractAddress,
-    pub token_from_amount: u256,
-    pub token_to_address: ContractAddress,
-    pub token_to_amount: u256,
-    pub token_to_min_amount: u256,
-    pub beneficiary: ContractAddress,
-    pub integrator_fee_amount_bps: u128,
-    pub integrator_fee_recipient: ContractAddress,
-    pub routes: Array<Route>
-}
