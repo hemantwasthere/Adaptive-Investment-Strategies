@@ -1,6 +1,6 @@
 mod contracts {
     mod auto_vault;
-    // mod cl_vault;
+    mod cl_vault;
     mod cl_token;
 }
 
@@ -15,6 +15,7 @@ mod interfaces {
     pub mod IEkuboCore;
     pub mod IEkuboPositions;
     pub mod IEkuboPositionsNFT;
+    pub mod ERC4626Strategy;
 }
 
 mod utils {

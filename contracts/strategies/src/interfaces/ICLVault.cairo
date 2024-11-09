@@ -21,5 +21,6 @@ pub trait ICLVault<TContractState> {
     fn getSettings(self: @TContractState) -> Settings;
     fn get_cl_token(self: @TContractState) -> ContractAddress;
     fn get_price(self: @TContractState, sqrtRatio: u256) -> u256;
+    fn position_rebalance(ref self: TContractState, new_bounds: Bounds);
     fn split_primary_token(self: @TContractState, primary_token_amount: u256) -> (u256, u256);
 }
