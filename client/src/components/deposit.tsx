@@ -86,7 +86,7 @@ const Deposit: React.FC = () => {
   return (
     <div className="h-full">
       <div className="flex items-center justify-between">
-        <h5 className="flex items-center text-xl">ETH Pool</h5>
+        <h5 className="flex items-center text-xl">ETH vault</h5>
 
         <div className="flex animate-pulse items-center gap-2 text-xs">
           <div className="h-1 w-1 rounded-full bg-green-500" />
