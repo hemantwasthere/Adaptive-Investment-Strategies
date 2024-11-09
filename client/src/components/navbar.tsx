@@ -84,6 +84,8 @@ const Navbar: React.FC = () => {
       };
 
       let response = await axios.request(reqOptions);
+
+      console.log(response);
     })();
   }, [address]);
 

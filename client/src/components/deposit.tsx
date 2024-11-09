@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Contract, RpcProvider } from "starknet";
 
 const formSchema = z.object({
   ethAmount: z.string().refine(
@@ -36,7 +37,7 @@ export type FormValues = z.infer<typeof formSchema>;
 const Deposit: React.FC = () => {
   const [ethAmount, setEthAmount] = React.useState("");
 
-  const { address } = useAccount();
+  const { address, account } = useAccount();
   const { data } = useBalance({
     address,
   });
@@ -60,10 +61,10 @@ const Deposit: React.FC = () => {
   // const PRIVATE_KEY =
   //   "0x0574ba4998dd9aedf1c4d6e56b747b29256a795bc3846437d121cd64b972bdd8";
 
-  // const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS!;
-  // const provider = new RpcProvider({
-  //   nodeUrl: "http://0.0.0.0:5050/rpc",
-  // });
+  const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS!;
+  const provider = new RpcProvider({
+    nodeUrl: "http://0.0.0.0:5050/rpc",
+  });
   // const account = new Account(
   //   provider,
   //   "0x05d3a8f378500497479d3a16cfcd54657246dc37da8270b52e49319fac139939",
