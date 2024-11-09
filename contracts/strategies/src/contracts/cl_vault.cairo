@@ -40,6 +40,11 @@ mod CLVault {
     // component!(path: ERC20Component, storage: erc20, event: ERC20Event);
     // component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
+    use starknet::contract_address::contract_address_const;
+    use ekubo::types::i129::{i129};
+
+
+
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -68,24 +73,44 @@ mod CLVault {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        asset: ContractAddress,
-        name: ByteArray,
-        symbol: ByteArray,
-        offset: u8,
-        owner: ContractAddress,
-        primary_token: ContractAddress,
-        secondary_token: ContractAddress,
         ekubo_positions_contract: ContractAddress,
         bounds_settings: Bounds,
+        // lower: i129,
+        // upper: i129,
         pool_key: PoolKey,
         ekubo_positions_nft: ContractAddress,
         ekubo_core: ContractAddress,
         oracle: ContractAddress,
         cl_token: ContractAddress,
-        admin: ContractAddress,
     ) {
-        self.primary_token.write(primary_token);
-        self.secondary_token.write(secondary_token);
+
+        // let ekubo_positions_contract: ContractAddress = contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>();
+        // let ekubo_positions_nft: ContractAddress = contract_address_const::<0x07b696af58c967c1b14c9dde0ace001720635a660a8e90c565ea459345318b30>();
+        // let ekubo_core: ContractAddress = contract_address_const::<0x00000005dd3D2F4429AF886cD1a3b08289DBcEa99A294197E9eB43b0e0325b4b>();
+        // let oracle: ContractAddress = contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>();
+        // // let cl_token: ContractAddress = contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>();
+        
+        // let lower_u128: u128 = 1180100000000000000;
+        // let upper_u128: u128 = 1187680000000000000;
+        // let _lower: i129 = lower_u128.try_into().unwrap();
+        // let _upper: i129 = upper_u128.try_into().unwrap();
+        // let bounds_settings: Bounds = Bounds {
+        //         lower: _lower,
+        //         upper: _upper,
+        //     };
+        
+
+        // let pool_key: PoolKey = PoolKey {
+        //         token0: contract_address_const::<0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7>(), //ETH
+        //         token1: contract_address_const::<0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2>(), //wstETH
+        //         fee: 0,
+        //         tick_spacing: 2,
+        //         extension: contract_address_const::<0x005e470ff654d834983a46b8f29dfa99963d5044b993cb7b9c92243a69dab38f>()
+        //     };
+        
+
+        self.primary_token.write(constants::ETH());
+        self.secondary_token.write(constants::wstETH());
         self.ekubo_positions_contract.write(ekubo_positions_contract);
         self.bounds_settings.write(bounds_settings);
         self.pool_key.write(pool_key);
@@ -93,7 +118,7 @@ mod CLVault {
         self.ekubo_core.write(ekubo_core);
         self.oracle.write(oracle);
         self.cl_token.write(cl_token);
-        self.admin.write(admin);
+        // self.admin.write(admin);
     }
 
     #[abi(embed_v0)]

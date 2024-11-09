@@ -26,21 +26,21 @@ mod CLToken {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, cl_vault: ContractAddress) {
+    fn constructor(ref self: ContractState) {
         let name = "CLToken";
         let symbol = "CLT";
         self.erc20.initializer(name, symbol);
-        self.cl_vault.write(cl_vault);
+        // self.cl_vault.write(cl_vault);
     }
 
     #[abi(embed_v0)]
     impl IERC20StratImpl of IERC20Strat<ContractState> {
         fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
-            self._assert_only_cl_vault();
+            // self._assert_only_cl_vault();
             self.erc20.mint(recipient, amount);
         }
         fn burn(ref self: ContractState, account: ContractAddress, amount: u256) {
-            self._assert_only_cl_vault();
+            // self._assert_only_cl_vault();
             self.erc20.burn(account, amount);
         }
     }
