@@ -2,7 +2,7 @@ import {Account, RawArgs, RpcProvider, TransactionExecutionStatus, extractContra
 import { readFileSync, existsSync, writeFileSync } from 'fs'
 
 export function getRpcProvider() {
-    return new RpcProvider({nodeUrl: process.env.RPC_URL}) 
+    return new RpcProvider({nodeUrl: "https://127.0.0.1:5050"}) 
 }
 
 function getContracts() {
@@ -18,13 +18,13 @@ function saveContracts(contracts: any) {
     writeFileSync(PATH, JSON.stringify(contracts));
 }
 
-export function getAccount(accountKey: string) {
+export function getAccount() {
     return new Account(getRpcProvider(), '', '') // 'address' and PK
 }
 
-export async function myDeclare(contract_name: string, package_name: string = 'strkfarm') {
+export async function myDeclare(contract_name: string, package_name: string = 'strategies') {
     const provider = getRpcProvider();
-    const acc = getAccount('strkfarmadmin');
+    const acc = getAccount();
     const compiledSierra = json.parse(
         readFileSync(`./target/dev/${package_name}_${contract_name}.contract_class.json`).toString("ascii")
     )
@@ -66,7 +66,7 @@ export async function myDeclare(contract_name: string, package_name: string = 's
 
 export async function deployContract(contract_name: string, classHash: string, constructorData: RawArgs) {
     const provider = getRpcProvider();
-    const acc = getAccount('strkfarmadmin');
+    const acc = getAccount();
 
     const fee = await acc.estimateDeployFee({
         classHash,
