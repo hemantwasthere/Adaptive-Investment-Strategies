@@ -192,9 +192,8 @@ mod AutoVault {
         // In CLVault
         fn dex_assets(self: @ContractState) -> u256 {
             let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
-            let auto_vault_liquidity = IERC20Dispatcher {
-                contract_address: CLVault.get_cl_token()
-            }.balance_of(get_contract_address());
+            let auto_vault_liquidity = IERC20Dispatcher { contract_address: CLVault.get_cl_token() }
+                .balance_of(get_contract_address());
             let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
             let (x, y) = calculateXandY(
                 auto_vault_liquidity.try_into().unwrap(), sqrtRatioA, sqrtRatioB, sqrtRatioCurrent
@@ -245,7 +244,8 @@ mod AutoVault {
                     let mut primary_amount = a;
                     if (t < b) {
                         let liquidity_t = t / (sqrtRatioB.into() - sqrtRatioCurrent.into());
-                        primary_amount = liquidity_t / (sqrtRatioCurrent.into() - sqrtRatioA.into());
+                        primary_amount = liquidity_t
+                            / (sqrtRatioCurrent.into() - sqrtRatioA.into());
                     }
                     let shares = CLVault
                         .provide_liquidity(primary_amount, t, get_contract_address());

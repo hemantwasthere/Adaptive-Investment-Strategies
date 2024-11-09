@@ -2,10 +2,7 @@
 mod HarvestInvestStrat {
     use erc4626::erc4626::erc4626::{ERC4626Component};
     use openzeppelin::introspection::src5::SRC5Component;
-    use openzeppelin::token::erc20::{
-        ERC20Component,
-        ERC20HooksEmptyImpl
-    };
+    use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use openzeppelin::access::ownable::ownable::OwnableComponent;
     use openzeppelin::upgrades::upgradeable::UpgradeableComponent;
 
@@ -15,48 +12,47 @@ mod HarvestInvestStrat {
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
 
-    use starknet::{
-        ContractAddress, ClassHash, 
-        contract_address::contract_address_const
-    };
+    use starknet::{ContractAddress, ClassHash, contract_address::contract_address_const};
     use strategies::interfaces::ERC4626Strategy::{IStrategy, Settings, Harvest};
-    use strategies::interfaces::IEkuboDistributor::{IEkuboDistributor, IEkuboDistributorDispatcher, IEkuboDistributorDispatcherTrait, Claim};
+    use strategies::interfaces::IEkuboDistributor::{
+        IEkuboDistributor, IEkuboDistributorDispatcher, IEkuboDistributorDispatcherTrait, Claim
+    };
     use strategies::components::swap::{AvnuMultiRouteSwap};
     use strategies::{get_contract_address, get_caller_address};
     use strategies::interfaces::zkLend::{IZTokenDispatcher, IZTokenDispatcherTrait};
-    use strategies::components::zkLend::{
-        zkLendStruct,
-        zkLendSettingsImpl
-    };
+    use strategies::components::zkLend::{zkLendStruct, zkLendSettingsImpl};
     use strategies::components::harvester::harvester_lib::{
-        HarvestConfig, HarvestConfigImpl,
-        HarvestHooksTrait
+        HarvestConfig, HarvestConfigImpl, HarvestHooksTrait
     };
     use strategies::components::harvester::harvester_lib::HarvestBeforeHookResult;
     use strategies::components::harvester::defi_spring_ekubo_style::{
-        EkuboStyleClaimSettings,
-        ClaimImpl
+        EkuboStyleClaimSettings, ClaimImpl
     };
     use strategies::components::harvester::defi_spring_default_style::{
-        SNFStyleClaimSettings,
-        ClaimImpl as DefaultClaimImpl
+        SNFStyleClaimSettings, ClaimImpl as DefaultClaimImpl
     };
     use strategies::components::harvester::reward_shares::RewardShareComponent;
 
 
-    use strategies::interfaces::oracle::{IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait, PriceWithUpdateTime};
+    use strategies::interfaces::oracle::{
+        IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait, PriceWithUpdateTime
+    };
 
     #[abi(embed_v0)]
-    impl ERC4626AdditionalImpl = ERC4626Component::ERC4626AdditionalImpl<ContractState>;
+    impl ERC4626AdditionalImpl =
+        ERC4626Component::ERC4626AdditionalImpl<ContractState>;
     #[abi(embed_v0)]
-    impl MetadataEntrypointsImpl = ERC4626Component::MetadataEntrypointsImpl<ContractState>;
+    impl MetadataEntrypointsImpl =
+        ERC4626Component::MetadataEntrypointsImpl<ContractState>;
     #[abi(embed_v0)]
-    impl SnakeEntrypointsImpl = ERC4626Component::SnakeEntrypointsImpl<ContractState>;
+    impl SnakeEntrypointsImpl =
+        ERC4626Component::SnakeEntrypointsImpl<ContractState>;
     #[abi(embed_v0)]
-    impl CamelEntrypointsImpl = ERC4626Component::CamelEntrypointsImpl<ContractState>;
+    impl CamelEntrypointsImpl =
+        ERC4626Component::CamelEntrypointsImpl<ContractState>;
     #[abi(embed_v0)]
     impl OwnableTwoStepImpl = OwnableComponent::OwnableTwoStepImpl<ContractState>;
-    
+
     impl ERC4626InternalImpl = ERC4626Component::InternalImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
@@ -75,7 +71,6 @@ mod HarvestInvestStrat {
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
-
         settings: Settings,
         lend_settings: zkLendStruct,
     }
@@ -93,7 +88,6 @@ mod HarvestInvestStrat {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         UpgradeableEvent: UpgradeableComponent::Event,
-
         Harvest: Harvest,
         Settings: Settings,
     }
@@ -118,24 +112,16 @@ mod HarvestInvestStrat {
 
     /// hooks defining before and after actions for the harvest function
     impl HarvestHooksImpl of HarvestHooksTrait<ContractState> {
-        fn before_update(
-            ref self: ContractState
-        ) -> HarvestBeforeHookResult {
+        fn before_update(ref self: ContractState) -> HarvestBeforeHookResult {
             let zTokenAddress = self.asset();
-            let zTokenDispatcher = IZTokenDispatcher {contract_address: zTokenAddress};
+            let zTokenDispatcher = IZTokenDispatcher { contract_address: zTokenAddress };
 
             let baseTokenAddress = zTokenDispatcher.underlying_token(); // e.g. STRK
 
-            HarvestBeforeHookResult {
-                baseToken: baseTokenAddress,
-            }
+            HarvestBeforeHookResult { baseToken: baseTokenAddress, }
         }
-    
-        fn after_update(
-            ref self: ContractState,
-            token: ContractAddress,
-            amount: u256
-        ) {
+
+        fn after_update(ref self: ContractState, token: ContractAddress, amount: u256) {
             let lendSettings: zkLendStruct = self.lend_settings.read();
             lendSettings.deposit(token, amount);
         }
@@ -144,7 +130,12 @@ mod HarvestInvestStrat {
     #[abi(embed_v0)]
     impl ExternalImpl of IStrategy<ContractState> {
         // Harvests token from distribution contract and invests in zklends pool
-        fn harvest(ref self: ContractState, claim: Claim, proof: Span<felt252>, swapInfo: AvnuMultiRouteSwap) {
+        fn harvest(
+            ref self: ContractState,
+            claim: Claim,
+            proof: Span<felt252>,
+            swapInfo: AvnuMultiRouteSwap
+        ) {
             let settings = self.get_settings();
             let ekuboSettings = EkuboStyleClaimSettings {
                 rewardsContract: settings.rewardsContract,
@@ -155,15 +146,16 @@ mod HarvestInvestStrat {
             let snfSettings = SNFStyleClaimSettings {
                 rewardsContract: contract_address_const::<0>()
             };
-            config.simple_harvest(
-                ref self,
-                ekuboSettings,
-                claim,
-                proof,
-                snfSettings,
-                swapInfo,
-                self.lend_settings.read().oracle
-            );
+            config
+                .simple_harvest(
+                    ref self,
+                    ekuboSettings,
+                    claim,
+                    proof,
+                    snfSettings,
+                    swapInfo,
+                    self.lend_settings.read().oracle
+                );
         }
 
         fn set_settings(ref self: ContractState, settings: Settings, lend_settings: zkLendStruct) {

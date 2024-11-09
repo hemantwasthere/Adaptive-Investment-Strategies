@@ -16,6 +16,7 @@ mod interfaces {
     pub mod IEkuboPositions;
     pub mod IEkuboPositionsNFT;
     pub mod ERC4626Strategy;
+    pub mod IEkuboNFT;
 }
 
 mod utils {
