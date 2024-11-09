@@ -32,14 +32,14 @@ const Tabs = () => {
 
       <TabsContent
         value="deposit"
-        className="h-[calc(19rem-36px)] w-full rounded-md border border-accent/10 bg-black/40 px-4 py-3 text-white"
+        className="h-[calc(20rem-36px)] w-full rounded-md border border-accent/10 bg-black/40 px-4 py-3 text-white"
       >
         <Deposit />
       </TabsContent>
 
       <TabsContent
         value="withdraw"
-        className="h-[calc(19rem-36px)] w-full rounded-md border border-accent/10 bg-black/40 px-4 py-3 text-white"
+        className="h-[calc(20rem-36px)] w-full rounded-md border border-accent/10 bg-black/40 px-4 py-3 text-white"
       >
         <Withdraw />
       </TabsContent>
