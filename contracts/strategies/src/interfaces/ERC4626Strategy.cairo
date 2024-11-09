@@ -1,7 +1,7 @@
 use starknet::{ContractAddress, ClassHash};
 use strategies::components::swap::{AvnuMultiRouteSwap};
 
-#[derive(Drop, Copy, Serde)] 
+#[derive(Drop, Copy, Serde)]
 pub struct Claim {
     pub id: u64,
     pub claimee: ContractAddress,
@@ -11,9 +11,9 @@ pub struct Claim {
 
 //
 // Re-uses zkLend's oracle middleware contract to interact with
-// Pragma. 
+// Pragma.
 // https://github.com/zkLend/zklend-v1-core/blob/master/src/default_price_oracle.cairo
-// 
+//
 // We deploy the came classhash of contract
 // https://starkscan.co/contract/0x023fb3afbff2c0e3399f896dcf7400acf1a161941cfb386e34a123f228c62832#read-write-contract-sub-write
 //
@@ -78,7 +78,9 @@ pub trait IPragmaOracle<TContractState> {
 
 #[starknet::interface]
 pub trait IPragmaNostraMock<TContractState> {
-    fn get_spot_median(self: @TContractState, pair_id: felt252) -> (felt252, felt252, felt252, felt252);
+    fn get_spot_median(
+        self: @TContractState, pair_id: felt252
+    ) -> (felt252, felt252, felt252, felt252);
     fn get_spot_with_USD_hop(
         self: @TContractState,
         base_currency_id: felt252,
@@ -112,7 +114,9 @@ pub trait IZkLendMarket<TContractState> {
     fn deposit(ref self: TContractState, token: ContractAddress, amount: felt252);
     fn withdraw(ref self: TContractState, token: ContractAddress, amount: felt252);
     fn enable_collateral(ref self: TContractState, token: ContractAddress);
-    fn is_collateral_enabled(self: @TContractState, user: ContractAddress, token: ContractAddress) -> bool;
+    fn is_collateral_enabled(
+        self: @TContractState, user: ContractAddress, token: ContractAddress
+    ) -> bool;
     fn borrow(ref self: TContractState, token: ContractAddress, amount: felt252);
     fn repay(ref self: TContractState, token: ContractAddress, amount: felt252);
     fn get_reserve_data(self: @TContractState, token: ContractAddress) -> MarketReserveData;
@@ -120,8 +124,8 @@ pub trait IZkLendMarket<TContractState> {
         self: @TContractState, user: ContractAddress, token: ContractAddress
     ) -> felt252;
     fn flash_loan(
-        ref self: TContractState, 
-        receiver: ContractAddress, 
+        ref self: TContractState,
+        receiver: ContractAddress,
         token: ContractAddress,
         amount: felt252,
         calldata: Span<felt252>
@@ -142,12 +146,11 @@ pub struct zkLendStruct {
 #[derive(Drop, Copy, Serde, starknet::Event, starknet::Store)]
 pub struct Settings {
     pub rewardsContract: ContractAddress, // distribution contract
-
     pub lendClassHash: ClassHash, // our lending lib contract classhash
     pub swapClassHash: ClassHash, // our swap lib contract classhash
 }
 
-#[derive(Drop, Copy, Serde, starknet::Event, starknet::Store)] 
+#[derive(Drop, Copy, Serde, starknet::Event, starknet::Store)]
 pub struct Harvest {
     pub asset: ContractAddress, // e.g. STRk
     pub amount: u256,
@@ -157,9 +160,7 @@ pub struct Harvest {
 #[starknet::interface]
 pub trait IStrategy<TContractState> {
     fn harvest(
-        ref self: TContractState,
-        claim: Claim, proof: Span<felt252>,
-        swapInfo: AvnuMultiRouteSwap
+        ref self: TContractState, claim: Claim, proof: Span<felt252>, swapInfo: AvnuMultiRouteSwap
     );
     fn set_settings(ref self: TContractState, settings: Settings, lend_settings: zkLendStruct);
 
