@@ -24,7 +24,7 @@ mod AutoVault {
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
 
-    use strategies::components::swap::{AvnuMultiRouteSwap, AvnuMultiRouteSwapImpl};
+    use strategies::components::swap::{AvnuMultiRouteSwap, AvnuMultiRouteSwapImpl, Route};
     use strategies::interfaces::oracle::{
         IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait
     };
@@ -334,9 +334,61 @@ mod AutoVault {
             IERC20CamelDispatcher { contract_address: self.token.read() }
         }
 
+        fn _prepare_swap_payload(
+            self: @ContractState, from_address: ContractAddress, to_address: ContractAddress
+        ) -> AvnuMultiRouteSwap {
+            AvnuMultiRouteSwap {
+                token_from_address: 0,
+                token_from_amount: 0,
+                token_to_address: 0,
+                token_to_amount: 0,
+                token_to_min_amount: 0,
+                beneficiary: 0,
+                integrator_fee_amount_bps: 0,
+                integrator_fee_recipient: 0,
+                routes: array![0]
+            }
+        }
 
-        fn _swap(ref self: ContractState, swapInfo: AvnuMultiRouteSwap,) -> u256 {
+        fn _swap(
+            ref self: ContractState, amount: u256, to_secondary: bool // ETH to wstETH ?
+        ) -> u256 {
+            let mut from_adress: ContractAddress = constants::ETH();
+            let mut to_address: ContractAddress = constants::wstETH();
+            let mut from_amount = amount;
+            let mut to_amount = 0;
+            let mut min_amount = 0;
+            if (!to_secondary) {
+                from_adress = constants::wstETH();
+                to_address = constants::ETH();
+                to_amount = amount;
+                from_amount = 0;
+            }
+
+            let swapInfo: AvnuMultiRouteSwap = AvnuMultiRouteSwap {
+                token_from_address: from_adress,
+                token_from_amount: from_amount,
+                token_to_address: to_address,
+                token_to_amount: to_amount,
+                token_to_min_amount: 0,
+                beneficiary: get_contract_address(),
+                integrator_fee_amount_bps: 0,
+                integrator_fee_recipient: get_contract_address(),
+                routes: array![constants::NOSTRA_PAIR()]
+            }
             return swapInfo.swap();
         }
     }
+}
+
+pub struct AvnuMultiRouteSwap {
+    pub token_from_address: ContractAddress,
+    pub token_from_amount: u256,
+    pub token_to_address: ContractAddress,
+    pub token_to_amount: u256,
+    pub token_to_min_amount: u256,
+    pub beneficiary: ContractAddress,
+    pub integrator_fee_amount_bps: u128,
+    pub integrator_fee_recipient: ContractAddress,
+    pub routes: Array<Route>
 }
