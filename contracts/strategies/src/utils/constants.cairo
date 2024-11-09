@@ -13,6 +13,7 @@ pub mod Constants {
 pub const BASIS_POINTS_FACTOR: u32 = 10000;
 pub const TWO_POWER_128: u128 = 0xffffffffffffffffffffffffffffffff;
 pub const TWO_POWER_256: u256 = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+pub const DECIMAL: u256 = 1000000000000000000; // 18 Decimal units
 
 // mainnet address
 pub fn STRK_ADDRESS() -> ContractAddress {

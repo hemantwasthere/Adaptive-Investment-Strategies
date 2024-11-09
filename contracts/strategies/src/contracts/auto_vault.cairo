@@ -5,7 +5,7 @@ mod AutoVault {
     use strategies::utils::errors::Errors;
     use strategies::utils::constants::Constants::{LENDING, DEX, DECIMALS};
     use strategies::utils::math::Math::{mul_div_down, mul_div_up, calculateXandY};
-
+    use strategies::utils::helpers::ERC20Helper;
 
     use strategies::interfaces::IAutoVault::IAutoVault;
     use strategies::interfaces::ICLVault::{ICLVaultDispatcher, ICLVaultDispatcherTrait};
@@ -81,7 +81,6 @@ mod AutoVault {
         ref self: ContractState,
         name: ByteArray,
         symbol: ByteArray,
-        _token: ContractAddress,
         _admin: ContractAddress,
         _rebalancer: ContractAddress,
         _auto_compound_vault: ContractAddress,
@@ -90,7 +89,7 @@ mod AutoVault {
     ) {
         // TODO if felt, change the datatype of name and symbol to byteArray.
         self.erc20.initializer(name, symbol);
-        self.token.write(_token);
+        self.token.write(constants::ETH());
         self.rebalancer.write(_rebalancer);
         self.auto_compound_vault.write(_auto_compound_vault);
         self.cl_vault.write(_cl_vault);
@@ -104,6 +103,7 @@ mod AutoVault {
             .approve(self.cl_vault.read(), BoundedU256::max());
         IERC20Dispatcher { contract_address: self.auto_compound_vault.read() }
             .approve(self.auto_compound_vault.read(), BoundedU256::max());
+        self.current_mode.write(0); //LENDING
     }
 
     #[abi(embed_v0)]
@@ -252,7 +252,25 @@ mod AutoVault {
                 }
                 self.emit(Rebalance { mode: _mode, timestamp: get_block_timestamp() });
                 self.current_mode.write(_mode);
-            };
+            }
+        }
+
+        fn rbETH_per_eth(self: @ContractState) -> u256 {
+            let supply: u256 = self.erc20.total_supply();
+            if (supply == 0 || self.total_assets() == 0) {
+                constants::DECIMAL
+            } else {
+                mul_div_down(supply, constants::DECIMAL, self.total_assets())
+            }
+        }
+
+        fn eth_per_rbEth(self: @ContractState) -> u256 {
+            let supply: u256 = self.erc20.total_supply();
+            if (supply == 0 || self.total_assets() == 0) {
+                constants::DECIMAL
+            } else {
+                mul_div_down(self.total_assets(), constants::DECIMAL, supply)
+            }
         }
     }
 
@@ -370,7 +388,12 @@ mod AutoVault {
                 let liquidity_t = t / (sqrtRatioB.into() - sqrtRatioCurrent.into());
                 primary_amount = liquidity_t / (sqrtRatioCurrent.into() - sqrtRatioA.into());
             }
-            // @note >> Don't approve, transfer from user to CLVault
+            ERC20Helper::strict_transfer_from(
+                constants::ETH(), get_caller_address(), self.cl_vault.read(), primary_amount
+            );
+            ERC20Helper::strict_transfer_from(
+                constants::wstETH(), get_caller_address(), self.cl_vault.read(), t
+            );
             let shares = CLVault.provide_liquidity(primary_amount, t, get_contract_address());
         }
 
