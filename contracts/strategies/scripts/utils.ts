@@ -2,7 +2,7 @@ import {Account, RawArgs, RpcProvider, TransactionExecutionStatus, extractContra
 import { readFileSync, existsSync, writeFileSync } from 'fs'
 
 export function getRpcProvider() {
-    return new RpcProvider({nodeUrl: "https://127.0.0.1:5050"}) 
+    return new RpcProvider({nodeUrl: "http://127.0.0.1:5050/rpc", blockIdentifier: 'latest'})
 }
 
 function getContracts() {
@@ -19,7 +19,10 @@ function saveContracts(contracts: any) {
 }
 
 export function getAccount() {
-    return new Account(getRpcProvider(), '', '') // 'address' and PK
+    return new Account(getRpcProvider(), 
+        '0x64b48806902a367c8598f4f95c305e8c1a1acba5f082d294a43793113115691', 
+        '0x0000000000000000000000000000000071d7bb07b9a64f6f78ac4c816aff4da9'
+    ) // 'address' and PK
 }
 
 export async function myDeclare(contract_name: string, package_name: string = 'strategies') {
@@ -38,11 +41,11 @@ export async function myDeclare(contract_name: string, package_name: string = 's
         casm: compiledCasm
     };
     
-    const fee = await acc.estimateDeclareFee({
-        contract: compiledSierra,
-        casm: compiledCasm, 
-    })
-    console.log('declare fee', Number(fee.suggestedMaxFee) / 10 ** 18, 'ETH')
+    // const fee = await acc.estimateDeclareFee({
+    //     contract: compiledSierra,
+    //     casm: compiledCasm, 
+    // })
+    // console.log('declare fee', Number(fee.suggestedMaxFee) / 10 ** 18, 'ETH')
     const result = extractContractHashes(payload);
     console.log("classhash:", result.classHash);
     
@@ -68,11 +71,11 @@ export async function deployContract(contract_name: string, classHash: string, c
     const provider = getRpcProvider();
     const acc = getAccount();
 
-    const fee = await acc.estimateDeployFee({
-        classHash,
-        constructorCalldata: constructorData,
-    })
-    console.log("Deploy fee", contract_name, Number(fee.suggestedMaxFee) / 10 ** 18, 'ETH')
+    // const fee = await acc.estimateDeployFee({
+    //     classHash,
+    //     constructorCalldata: constructorData,
+    // })
+    // console.log("Deploy fee", contract_name, Number(fee.suggestedMaxFee) / 10 ** 18, 'ETH')
 
     const tx = await acc.deployContract({
         classHash,
