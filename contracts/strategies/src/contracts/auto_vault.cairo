@@ -8,6 +8,7 @@ mod AutoVault {
 
 
     use strategies::interfaces::IAutoVault::IAutoVault;
+    use strategies::interfaces::ICLVault::{ICLVaultDispatcher, ICLVaultDispatcherTrait};
     use strategies::interfaces::IERC20Camel::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use strategies::interfaces::IERC4626::{IERC4626Dispatcher, IERC4626DispatcherTrait};
 
@@ -15,6 +16,7 @@ mod AutoVault {
     // use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
     // ERC20 Mixin
     #[abi(embed_v0)]
@@ -36,6 +38,7 @@ mod AutoVault {
         rebalancer: ContractAddress,
         current_mode: u8,
         auto_compound_vault: ContractAddress,
+        cl_vault: ContractAddress,
     }
 
 
@@ -81,6 +84,7 @@ mod AutoVault {
         _admin: ContractAddress,
         _rebalancer: ContractAddress,
         _auto_compound_vault: ContractAddress,
+        _cl_vault: ContractAddress,
     ) {
         // assert(!token.is_zero(), Errors::ZERO_ADDRESS);
         // assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
@@ -92,6 +96,8 @@ mod AutoVault {
         self.token.write(_token);
         self.rebalancer.write(_rebalancer);
         self.auto_compound_vault.write(_auto_compound_vault);
+        self.cl_vault.write(_cl_vault);
+        // @note >> Approve the CLVault for max value of eth and wstETH
     }
 
     #[abi(embed_v0)]
@@ -180,7 +186,7 @@ mod AutoVault {
         }
 
         fn rebalance(ref self: ContractState, _mode: u8) {
-            assert(get_caller_address() == self.rebalancer.read(), 'NOT AUTORIZE');
+            assert(get_caller_address() == self.rebalancer.read(), 'NOT AUTHORIZED');
             assert(_mode == LENDING || _mode == DEX, 'incorrect mode'); // 1 for lending, 2 for CL
 
             if (self.current_mode.read() != _mode) {
@@ -195,10 +201,11 @@ mod AutoVault {
                         .convert_to_assets(auto_compound_shares);
 
                     //withdrawal from CL vault.
-                    let asset = self._withdraw_from_cl(vault_asset_balance);
-
+                    let (primary_token_amount, secondary_token_amount) = self
+                        ._withdraw_from_cl(vault_asset_balance);
+                    // @note >> Swap secodary to primary, let say amount is t
                     // deposit to auto comp vault
-                    self._deposit_to_auto_comp(asset);
+                    self._deposit_to_auto_comp(primary_token_amount + t);
                 } else { //TODO implement auto_compound vault withdrawal and CL vault deposit calls
                 }
                 self.emit(Rebalance { mode: _mode, timestamp: get_block_timestamp() });
@@ -272,7 +279,7 @@ mod AutoVault {
             let auto_comp_dispatcher: IERC4626Dispatcher = IERC4626Dispatcher {
                 contract_address: self.auto_compound_vault.read()
             };
-            // NOTE reciever of strkFarm LP will be auto vault
+            // NOTE reciever of AutoCompund  LP will be auto vault
             auto_comp_dispatcher.deposit(assets, get_contract_address());
         }
 
@@ -284,7 +291,7 @@ mod AutoVault {
             };
 
             let auto_comp_share = auto_comp_dispatcher.convert_to_shares(assets);
-            // NOTE reciever of strkFarm LP will be auto vault
+            // NOTE reciever of AutoCompound LP will be auto vault
             let asset = auto_comp_dispatcher
                 .redeem(auto_comp_share, get_contract_address(), get_contract_address());
             return asset;
@@ -293,12 +300,33 @@ mod AutoVault {
 
         // TODO
         // deposit to  CL vault.
-        fn _deposit_to_cl(ref self: ContractState, assets: u256,) {}
+        fn _deposit_to_cl(ref self: ContractState, assets: u256,) {
+            let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
+            let (a, b) = CLVault.split_primary_token(assets);
+            // @note >> Do min check ?
+            // @note >> For now directly swapping
+            let amount_to_swap = (assets - a);
+            // @note >> Get the amount of wsETH after swap, i.e get t
+            // - If t < b, Tx could revert
+            // use self.swap() >> Once build issue is fixed
+            // @note >> Approve the CL Vault ?
+            // @note >> Don't approve, transfer from user to AutoVault
+            let shares = CLVault.provide_liquidity(a, b, get_contract_address());
+        }
 
         // TODO
         // withdraw from CL
-        fn _withdraw_from_cl(ref self: ContractState, assets: u256,) -> u256 {
-            0
+        fn _withdraw_from_cl(ref self: ContractState, assets: u256,) -> (u256, u256) {
+            let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
+            let auto_vault_net_liquidity = IERC20Dispatcher {
+                contract_address: CLVault.get_cl_token()
+            }
+                .balance_of(get_contract_address());
+            // @note >> Approve tho burn the CLToken
+            let (primary_token_amount, secondary_token_amount) = CLVault
+                .remove_liquidity(auto_vault_net_liquidity);
+            // @note >> Make sure we have both amount not single token
+            return (primary_token_amount, secondary_token_amount);
         }
 
 
