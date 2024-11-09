@@ -193,7 +193,7 @@ mod AutoVault {
             );
             let price = CLVault.get_price();
             let y_primary = ( y * DECIMALS ) / price;
-            return y_primary;
+            return x + y_primary;
             
         }
 
@@ -377,6 +377,14 @@ mod AutoVault {
                 from_amount = 0;
             }
 
+            let route : Route = Route {
+                token_from: from_adress,
+                token_to: to_address,
+                exchange_address: constants::NOSTRA_EXCHANGE(),
+                percent: 1000000000000,
+                additional_swap_params: array![constants::NOSTRA_PAIR()],
+            }
+
             let swapInfo: AvnuMultiRouteSwap = AvnuMultiRouteSwap {
                 token_from_address: from_adress,
                 token_from_amount: from_amount,
@@ -386,7 +394,7 @@ mod AutoVault {
                 beneficiary: get_contract_address(),
                 integrator_fee_amount_bps: 0,
                 integrator_fee_recipient: get_contract_address(),
-                routes: array![constants::NOSTRA_PAIR()]
+                routes: array![route]
             };
 
             return swapInfo.swap();

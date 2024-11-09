@@ -19,4 +19,6 @@ pub trait IAutoVault<TContractState> {
     fn total_assets(self: @TContractState) -> u256;
 
     fn rebalance(ref self: TContractState, _mode: u8);
+    fn lending_assets(self: @TContractAddress) -> u256;
+    fn dex_assets(self: @TContractAddress) -> u256;
 }

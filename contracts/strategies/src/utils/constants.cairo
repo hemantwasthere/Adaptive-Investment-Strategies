@@ -1,5 +1,7 @@
 use starknet::ContractAddress;
 use starknet::contract_address::contract_address_const;
+use strategies::components::swap::{AvnuMultiRouteSwap, AvnuMultiRouteSwapImpl, Route};
+
 
 pub mod Constants {
     pub const LENDING: u8 = 0;
@@ -39,3 +41,10 @@ pub fn wstETH() -> ContractAddress {
     0x042b8f0484674ca266ac5d08e4ac6a3fe65bd3129795def2dca5c34ecc5f96d2
     ()
 }
+
+pub fn NOSTRA_EXCHANGE() -> ContractAddress {
+    contract_address_const::<>
+    0x49ff5b3a7d38e2b50198f408fa8281635b5bc81ee49ab87ac36c8324c214427
+    ()
+}
+
