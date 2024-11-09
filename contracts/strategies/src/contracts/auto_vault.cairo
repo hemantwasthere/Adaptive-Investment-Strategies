@@ -234,7 +234,7 @@ mod AutoVault {
                 );
 
             // TODO call the lending/dex vaults.
-            if(self.current_mode.read() == 1) {
+            if(self.current_mode.read() == LENDING) {
                 self._deposit_to_auto_comp(assets);
             }else {
                 self._deposit_to_cl(assets);
@@ -268,7 +268,7 @@ mod AutoVault {
                 );
 
             
-            if(self.current_mode.read() == 1) {
+            if(self.current_mode.read() == LENDING) {
 
                 let asset = self._withdraw_from_auto_comp(assets);
 
