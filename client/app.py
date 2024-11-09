@@ -11,12 +11,11 @@ with open('decision_tree_model.pkl', 'rb') as f:
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    volatility_val = np.array(0.00001).reshape(-1, 1) 
-
-    # print(request.form)
-    # data = request.json
+    data = request.get_json()
+    print('req-data', data)
+    
     # Assuming data is pre-processed appropriately
-    prediction = model.predict(volatility_val)
+    prediction = model.predict([data['volatility']])
     return jsonify({'prediction': prediction.tolist()})
 
 print("Starting the server")
