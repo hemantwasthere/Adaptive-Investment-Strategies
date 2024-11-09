@@ -1,19 +1,9 @@
 "use client";
 
-import {
-  useAccount,
-  useConnect,
-  useDisconnect,
-  useStarkProfile,
-} from "@starknet-react/core";
+import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
+import axios from "axios";
 import { motion } from "framer-motion";
-import {
-  Check,
-  CheckCircle,
-  ChevronDown,
-  CircleCheck,
-  Copy,
-} from "lucide-react";
+import { Check, ChevronDown, CircleCheck, Copy } from "lucide-react";
 import Image from "next/image";
 import React from "react";
 
@@ -31,28 +21,83 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, shortAddress, truncate } from "@/lib/utils";
+import { cn, shortAddress } from "@/lib/utils";
 
 import { toast } from "@/hooks/use-toast";
+import { userStore } from "@/store/user-store";
 import MaxWidthWrapper from "./max-width-wrapper";
+
+const rocketAnimation = {
+  initial: { x: 0, y: 0 },
+  animate: { x: [-5, 5, -5], y: [5, -5, 5] },
+  transition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+};
 
 const Navbar: React.FC = () => {
   const [showTick, setShowTick] = React.useState(false);
 
-  const { address, isConnecting } = useAccount();
+  const { setAddress, lastWallet, setLastWallet } = userStore();
+
+  const { address, isConnecting, connector } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnectAsync } = useDisconnect();
 
-  const { data: starkProfile } = useStarkProfile({
-    address,
-    useDefaultPfp: true,
-  });
+  function autoConnect(retry = 0) {
+    try {
+      if (!address && lastWallet) {
+        const connectorIndex = ["Braavos", "Argent X"].findIndex(
+          (name) => name === lastWallet,
+        );
+        if (connectorIndex >= 0) {
+          connect({ connector: connectors[connectorIndex] });
+        }
+      }
+    } catch (error) {
+      if (retry < 10) {
+        setTimeout(() => {
+          autoConnect(retry + 1);
+        }, 1000);
+      }
+    }
+  }
 
-  const rocketAnimation = {
-    initial: { x: 0, y: 0 },
-    animate: { x: [-5, 5, -5], y: [5, -5, 5] },
-    transition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-  };
+  React.useEffect(() => {
+    (async () => {
+      if (!address) return;
+
+      setAddress(address);
+
+      let bodyContent = JSON.stringify({
+        address: address,
+        amount: 10000000000000000000000,
+        unit: "WEI",
+      });
+
+      let reqOptions = {
+        url: "http://127.0.0.1:5050/mint",
+        method: "POST",
+        headers: {
+          Accept: "*/*",
+          "Content-Type": "application/json",
+        },
+        data: bodyContent,
+      };
+
+      let response = await axios.request(reqOptions);
+
+      console.log(response);
+    })();
+  }, [address]);
+
+  React.useEffect(() => {
+    if (connector) {
+      setLastWallet(connector.name);
+    }
+  }, [connector]);
+
+  React.useEffect(() => {
+    autoConnect();
+  }, [lastWallet]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-accent/10 bg-black/40">
@@ -75,7 +120,8 @@ const Navbar: React.FC = () => {
               {!address && isConnecting && (
                 <div className="flex h-9 w-[9.5rem] items-center justify-center gap-2 rounded-md border border-accent/10 group-focus-visible:outline-1 group-focus-visible:outline-white">
                   <Image
-                    src={starkProfile?.profilePicture || "/fallback-avatar.svg"}
+                    // src={starkProfile?.profilePicture || "/fallback-avatar.svg"}
+                    src={"/fallback-avatar.svg"}
                     className="shrink-0 rounded-full"
                     width={20}
                     height={20}
@@ -91,16 +137,14 @@ const Navbar: React.FC = () => {
               {address && !isConnecting && (
                 <div className="flex h-9 w-[9.5rem] items-center justify-center gap-2 rounded-md border border-accent/10 group-focus-visible:outline-1 group-focus-visible:outline-white">
                   <Image
-                    src={starkProfile?.profilePicture || "/fallback-avatar.svg"}
+                    src={"/fallback-avatar.svg"}
                     className="shrink-0 rounded-full"
                     width={20}
                     height={20}
                     alt="strkprofile-pfp"
                   />
                   <p className="flex items-center gap-1 text-sm">
-                    {starkProfile && starkProfile.name
-                      ? truncate(starkProfile.name, 6, 6)
-                      : shortAddress(address, 4, 4)}
+                    {address && shortAddress(address, 4, 4)}
                     <ChevronDown className="size-3" />
                   </p>
                 </div>
