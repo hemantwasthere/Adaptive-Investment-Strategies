@@ -177,7 +177,7 @@ mod CLVault {
                     0x00,
                     true
                 );
-            // @note-question >> Do I need to burn NFT ID
+            // @note-question >> Do I need to burn NFT 
             // Check which amount is now zero is token a or token b
             if (sqrtRatioCurrent <= sqrtRatioA) { // Amount of token b is zero
             // Split this amount and do swap

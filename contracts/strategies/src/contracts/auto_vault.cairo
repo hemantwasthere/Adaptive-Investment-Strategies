@@ -40,6 +40,7 @@ mod AutoVault {
         current_mode: u8,
         auto_compound_vault: ContractAddress,
         cl_vault: ContractAddress,
+        cl_token: ContractAddress,
     }
 
 
@@ -93,11 +94,16 @@ mod AutoVault {
         self.rebalancer.write(_rebalancer);
         self.auto_compound_vault.write(_auto_compound_vault);
         self.cl_vault.write(_cl_vault);
+        self.cl_token.write(_cl_token);
         // @note >> Approve the CLVault for max value of eth and wstETH >> Done
         IERC20Dispatcher { contract_address: constants::ETH() }
             .approve(self.cl_vault.read(), BoundedU256::max());
         IERC20Dispatcher { contract_address: constants::wstETH() }
             .approve(self.cl_vault.read(), BoundedU256::max());
+        IERC20Dispatcher { contract_address: self.cl_token.read() }
+            .approve(self.cl_vault.read(), BoundedU256::max());
+        IERC20Dispatcher { contract_address: self.auto_compound_vault.read() }
+            .approve(self.auto_compound_vault.read(), BoundedU256::max());
     }
 
     #[abi(embed_v0)]
@@ -192,37 +198,59 @@ mod AutoVault {
                 auto_vault_liquidity, sqrtRatioA, sqrtRatioB, sqrtRatioCurrent
             );
             let price = CLVault.get_price();
-            let y_primary = ( y * DECIMALS ) / price;
+            let y_primary = (y * DECIMALS) / price;
             return x + y_primary;
-            
         }
 
         fn rebalance(ref self: ContractState, _mode: u8) {
             assert(get_caller_address() == self.rebalancer.read(), 'NOT AUTHORIZED');
-            assert(_mode == LENDING || _mode == DEX, 'incorrect mode'); // 1 for lending, 2 for CL
+            assert(_mode == LENDING || _mode == DEX, 'incorrect mode');
 
             if (self.current_mode.read() != _mode) {
                 if (_mode == LENDING) {
-                    // CL vault withdrawal and auto_compound vault deposit calls
-                    let auto_comp_dispatcher: IERC4626Dispatcher = IERC4626Dispatcher {
-                        contract_address: self.auto_compound_vault.read()
-                    };
-                    let auto_compound_shares = auto_comp_dispatcher
-                        .balance_of(get_contract_address());
-                    let vault_asset_balance = auto_comp_dispatcher
-                        .convert_to_assets(auto_compound_shares);
-
                     //withdrawal from CL vault.
                     let (primary_token_amount, secondary_token_amount) = self
-                        ._withdraw_from_cl(vault_asset_balance);
-                    // @note >> Swap secodary to primary, let say amount is t
-                    // deposit to auto comp vault
-                    self._deposit_to_auto_comp(primary_token_amount + t);
-                } else { //TODO implement auto_compound vault withdrawal and CL vault deposit calls
+                        ._withdraw_all_from_cl(vault_asset_balance);
+
+                    let mut amount_primary_received = 0;
+                    if (primary_token_amount != 0 && secondary_token_amount != 0) {
+                        // Swap secondary for Primary
+                        amount_primary_received = self._swap(secondary_token_amount, false);
+                    };
+                    if (primary_token_amount == 0) {
+                        amount_primary_received = self._swap(secondary_token_amount, false);
+                    }
+                    amount_primary_received + primary_token_amount;
+                    self._deposit_to_auto_comp(amount_primary_received + primary_token_amount);
+                } else {
+                    // Withdraw from AutoCompound
+                    let primary_token = self._withdraw_all_from_auto_comp();
+                    // Provide Liquidity to CLVault
+                    let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
+                    let (a, b) = CLVault.split_primary_token(primary_token);
+                    let amount_to_swap = (primary_token - a);
+                    let balance_secondary_before = IERC20Dispatcher {
+                        contract_address: constants::wstETH()
+                    }
+                        .balance_of(get_contract_address());
+                    self._swap(amount_to_swap, true);
+                    let balance_secondary_after = IERC20Dispatcher {
+                        contract_address: constants::wstETH()
+                    }
+                        .balance_of(get_contract_address());
+                    let t = balance_secondary_after - balance_secondary_before;
+                    let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
+                    let mut primary_amount = a;
+                    if (t < b) {
+                        let liquidity_t = t / (sqrtRatioB - sqrtRatioCurrent);
+                        primary_amount = liquidity_t / (sqrtRatioCurrent - sqrtRatioA);
+                    }
+                    let shares = CLVault
+                        .provide_liquidity(primary_amount, t, get_contract_address());
                 }
                 self.emit(Rebalance { mode: _mode, timestamp: get_block_timestamp() });
                 self.current_mode.write(_mode);
-            }
+            };
         }
     }
 
@@ -309,38 +337,71 @@ mod AutoVault {
             return asset;
         }
 
+        fn _withdraw_all_from_auto_comp(ref self: ContractState) -> u256 {
+            let auto_comp_dispatcher: IERC4626Dispatcher = IERC4626Dispatcher {
+                contract_address: self.auto_compound_vault.read()
+            };
+            let total_shares = auto_comp_dispatcher.balance_of(get_contract_address());
+            let asset = auto_comp_dispatcher
+                .redeem(auto_comp_share, get_contract_address(), get_contract_address());
+            return asset;
+        }
+
 
         // TODO
         // deposit to  CL vault.
         fn _deposit_to_cl(ref self: ContractState, assets: u256,) {
             let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
             let (a, b) = CLVault.split_primary_token(assets);
-            // @note >> Do min check ?
-            // @note >> For now directly swapping
             let amount_to_swap = (assets - a);
-            // @note >> Get the amount of wsETH after swap, i.e get t
-            // - If t < b, Tx could revert
-            // use self.swap() >> Once build issue is fixed
-            // @note >> Approve the CL Vault ?
-            // @note >> Don't approve, transfer from user to AutoVault
-            let shares = CLVault.provide_liquidity(a, b, get_contract_address());
+            let balance_secondary_before = IERC20Dispatcher {
+                contract_address: constants::wstETH()
+            }
+                .balance_of(get_contract_address());
+            self._swap(amount_to_swap, true);
+            let balance_secondary_after = IERC20Dispatcher { contract_address: constants::wstETH() }
+                .balance_of(get_contract_address());
+            let t = balance_secondary_after - balance_secondary_before;
+            let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
+            let mut primary_amount = a;
+            if (t < b) {
+                let liquidity_t = t / (sqrtRatioB - sqrtRatioCurrent);
+                primary_amount = liquidity_t / (sqrtRatioCurrent - sqrtRatioA);
+            }
+            // @note >> Don't approve, transfer from user to CLVault
+            let shares = CLVault.provide_liquidity(primary_amount, t, get_contract_address());
         }
 
         // TODO
         // withdraw from CL
-        fn _withdraw_from_cl(ref self: ContractState, assets: u256,) -> (u256, u256) {
+        fn _withdraw_all_from_cl(ref self: ContractState, assets: u256,) -> (u256, u256) {
             let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
             let auto_vault_net_liquidity = IERC20Dispatcher {
                 contract_address: CLVault.get_cl_token()
             }
                 .balance_of(get_contract_address());
-            // @note >> Approve tho burn the CLToken
             let (primary_token_amount, secondary_token_amount) = CLVault
                 .remove_liquidity(auto_vault_net_liquidity);
-            // @note >> Make sure we have both amount not single token
             return (primary_token_amount, secondary_token_amount);
         }
 
+        fn _withdraw_from_cl(ref self: ContractState, assets: u256,) -> u256 {
+            let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
+            let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
+            let liquidity_x = assets / (sqrtRatioCurrent - sqrtRatioA);
+            let (primary_token_amount, secondary_token_amount) = CLVault
+                .remove_liquidity(liquidity_x);
+            // Swap
+            let mut amount_primary_received = 0;
+            if (primary_token_amount != 0 && secondary_token_amount != 0) {
+                // Swap secondary for Primary
+                amount_primary_received = self._swap(secondary_token_amount, false);
+            };
+            if (primary_token_amount == 0) {
+                amount_primary_received = self._swap(secondary_token_amount, false);
+            }
+            return amount_primary_received + primary_token_amount;
+        }
 
         fn _erc20_camel(self: @ContractState) -> IERC20CamelDispatcher {
             IERC20CamelDispatcher { contract_address: self.token.read() }
@@ -375,15 +436,15 @@ mod AutoVault {
                 to_address = constants::ETH();
                 to_amount = amount;
                 from_amount = 0;
-            }
+            };
 
-            let route : Route = Route {
+            let route: Route = Route {
                 token_from: from_adress,
                 token_to: to_address,
                 exchange_address: constants::NOSTRA_EXCHANGE(),
                 percent: 1000000000000,
                 additional_swap_params: array![constants::NOSTRA_PAIR()],
-            }
+            };
 
             let swapInfo: AvnuMultiRouteSwap = AvnuMultiRouteSwap {
                 token_from_address: from_adress,
