@@ -1,4 +1,7 @@
 use starknet::{ContractAddress, ClassHash};
+use strategies::interfaces::IEkuboCore::{Bounds, PoolKey, PositionKey};
+use ekubo::types::position::Position;
+use strategies::interfaces::ERC4626Strategy::{IStrategy, Settings, Harvest};
 
 #[starknet::interface]
 pub trait ICLVault<TContractState> {

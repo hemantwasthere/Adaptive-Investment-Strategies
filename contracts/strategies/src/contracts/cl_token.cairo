@@ -35,15 +35,13 @@ mod CLToken {
 
     #[abi(embed_v0)]
     impl IERC20StratImpl of IERC20Strat<ContractState> {
-        fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
+        fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
             self._assert_only_cl_vault();
             self.erc20.mint(recipient, amount);
-            true
         }
-        fn burn(ref self: ContractState, amount: u256) -> bool {
+        fn burn(ref self: ContractState, account: ContractAddress, amount: u256) {
             self._assert_only_cl_vault();
-            self.erc20.burn(get_caller_address(), amount);
-            true
+            self.erc20.burn(account, amount);
         }
     }
 

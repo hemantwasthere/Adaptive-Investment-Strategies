@@ -1,5 +1,5 @@
 use starknet::{ContractAddress, get_caller_address, get_contract_address, ClassHash};
-use strkfarm::interfaces::IEkuboCore::{Bounds, PoolKey};
+use strategies::interfaces::IEkuboCore::{Bounds, PoolKey};
 
 #[starknet::interface]
 pub trait IEkubo<TContractState> {

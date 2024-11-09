@@ -4,14 +4,14 @@ mod AutoVault {
 
     use strategies::utils::errors::Errors;
     use strategies::utils::constants::Constants::{LENDING, DEX, DECIMALS};
-    use strategies::utils::math::Math::{mul_div_down, mul_div_up};
+    use strategies::utils::math::Math::{mul_div_down, mul_div_up, calculateXandY};
 
 
     use strategies::interfaces::IAutoVault::IAutoVault;
     use strategies::interfaces::ICLVault::{ICLVaultDispatcher, ICLVaultDispatcherTrait};
     use strategies::interfaces::IERC20Camel::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use strategies::interfaces::IERC4626::{IERC4626Dispatcher, IERC4626DispatcherTrait};
-
+    use strategies::utils::constants;
 
     // use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
@@ -28,7 +28,6 @@ mod AutoVault {
     use strategies::interfaces::oracle::{
         IPriceOracle, IPriceOracleDispatcher, IPriceOracleDispatcherTrait
     };
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use integer::BoundedU256;
 
     #[storage]
@@ -87,6 +86,7 @@ mod AutoVault {
         _rebalancer: ContractAddress,
         _auto_compound_vault: ContractAddress,
         _cl_vault: ContractAddress,
+        _cl_token: ContractAddress
     ) {
         // TODO if felt, change the datatype of name and symbol to byteArray.
         self.erc20.initializer(name, symbol);
@@ -175,12 +175,12 @@ mod AutoVault {
 
 
         fn total_assets(self: @ContractState) -> u256 {
-            let total_asset = self.lending_assets() + self.dex_assets();
+            let total_asset: u256 = self.lending_assets() + self.dex_assets();
             return total_asset;
         }
 
         // In ETH AutoCompoundVault
-        fn lending_assets(self: @ContractAddress) -> u256 {
+        fn lending_assets(self: @ContractState) -> u256 {
             let auto_comp_dispatcher: IERC4626Dispatcher = IERC4626Dispatcher {
                 contract_address: self.auto_compound_vault.read()
             };
@@ -190,14 +190,16 @@ mod AutoVault {
         }
 
         // In CLVault
-        fn dex_assets(self: @ContractAddress) -> u256 {
+        fn dex_assets(self: @ContractState) -> u256 {
             let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
-            let auto_vault_liquidity = CLVault.balance_of(get_contract_address());
+            let auto_vault_liquidity = IERC20Dispatcher {
+                contract_address: CLVault.get_cl_token()
+            }.balance_of(get_contract_address());
             let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
-            let (x, y) = Math::calculateXandY(
-                auto_vault_liquidity, sqrtRatioA, sqrtRatioB, sqrtRatioCurrent
+            let (x, y) = calculateXandY(
+                auto_vault_liquidity.try_into().unwrap(), sqrtRatioA, sqrtRatioB, sqrtRatioCurrent
             );
-            let price = CLVault.get_price();
+            let price = CLVault.get_price(sqrtRatioCurrent.into());
             let y_primary = (y * DECIMALS) / price;
             return x + y_primary;
         }
@@ -210,7 +212,7 @@ mod AutoVault {
                 if (_mode == LENDING) {
                     //withdrawal from CL vault.
                     let (primary_token_amount, secondary_token_amount) = self
-                        ._withdraw_all_from_cl(vault_asset_balance);
+                        ._withdraw_all_from_cl();
 
                     let mut amount_primary_received = 0;
                     if (primary_token_amount != 0 && secondary_token_amount != 0) {
@@ -242,8 +244,8 @@ mod AutoVault {
                     let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
                     let mut primary_amount = a;
                     if (t < b) {
-                        let liquidity_t = t / (sqrtRatioB - sqrtRatioCurrent);
-                        primary_amount = liquidity_t / (sqrtRatioCurrent - sqrtRatioA);
+                        let liquidity_t = t / (sqrtRatioB.into() - sqrtRatioCurrent.into());
+                        primary_amount = liquidity_t / (sqrtRatioCurrent.into() - sqrtRatioA.into());
                     }
                     let shares = CLVault
                         .provide_liquidity(primary_amount, t, get_contract_address());
@@ -343,7 +345,7 @@ mod AutoVault {
             };
             let total_shares = auto_comp_dispatcher.balance_of(get_contract_address());
             let asset = auto_comp_dispatcher
-                .redeem(auto_comp_share, get_contract_address(), get_contract_address());
+                .redeem(total_shares, get_contract_address(), get_contract_address());
             return asset;
         }
 
@@ -365,8 +367,8 @@ mod AutoVault {
             let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
             let mut primary_amount = a;
             if (t < b) {
-                let liquidity_t = t / (sqrtRatioB - sqrtRatioCurrent);
-                primary_amount = liquidity_t / (sqrtRatioCurrent - sqrtRatioA);
+                let liquidity_t = t / (sqrtRatioB.into() - sqrtRatioCurrent.into());
+                primary_amount = liquidity_t / (sqrtRatioCurrent.into() - sqrtRatioA.into());
             }
             // @note >> Don't approve, transfer from user to CLVault
             let shares = CLVault.provide_liquidity(primary_amount, t, get_contract_address());
@@ -374,23 +376,23 @@ mod AutoVault {
 
         // TODO
         // withdraw from CL
-        fn _withdraw_all_from_cl(ref self: ContractState, assets: u256,) -> (u256, u256) {
+        fn _withdraw_all_from_cl(ref self: ContractState) -> (u256, u256) {
             let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
             let auto_vault_net_liquidity = IERC20Dispatcher {
                 contract_address: CLVault.get_cl_token()
             }
                 .balance_of(get_contract_address());
             let (primary_token_amount, secondary_token_amount) = CLVault
-                .remove_liquidity(auto_vault_net_liquidity);
+                .remove_liquidity(auto_vault_net_liquidity, get_contract_address());
             return (primary_token_amount, secondary_token_amount);
         }
 
         fn _withdraw_from_cl(ref self: ContractState, assets: u256,) -> u256 {
             let CLVault = ICLVaultDispatcher { contract_address: self.cl_vault.read() };
             let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = CLVault.get_sqrt_values();
-            let liquidity_x = assets / (sqrtRatioCurrent - sqrtRatioA);
+            let liquidity_x = assets / (sqrtRatioCurrent.into() - sqrtRatioA.into());
             let (primary_token_amount, secondary_token_amount) = CLVault
-                .remove_liquidity(liquidity_x);
+                .remove_liquidity(liquidity_x, get_contract_address());
             // Swap
             let mut amount_primary_received = 0;
             if (primary_token_amount != 0 && secondary_token_amount != 0) {
@@ -405,22 +407,6 @@ mod AutoVault {
 
         fn _erc20_camel(self: @ContractState) -> IERC20CamelDispatcher {
             IERC20CamelDispatcher { contract_address: self.token.read() }
-        }
-
-        fn _prepare_swap_payload(
-            self: @ContractState, from_address: ContractAddress, to_address: ContractAddress
-        ) -> AvnuMultiRouteSwap {
-            AvnuMultiRouteSwap {
-                token_from_address: 0,
-                token_from_amount: 0,
-                token_to_address: 0,
-                token_to_amount: 0,
-                token_to_min_amount: 0,
-                beneficiary: 0,
-                integrator_fee_amount_bps: 0,
-                integrator_fee_recipient: 0,
-                routes: array![0]
-            }
         }
 
         fn _swap(
@@ -443,7 +429,7 @@ mod AutoVault {
                 token_to: to_address,
                 exchange_address: constants::NOSTRA_EXCHANGE(),
                 percent: 1000000000000,
-                additional_swap_params: array![constants::NOSTRA_PAIR()],
+                additional_swap_params: array![constants::NOSTRA_PAIR().try_into().unwrap()],
             };
 
             let swapInfo: AvnuMultiRouteSwap = AvnuMultiRouteSwap {

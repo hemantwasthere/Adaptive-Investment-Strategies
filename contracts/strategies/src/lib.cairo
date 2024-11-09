@@ -1,6 +1,6 @@
 mod contracts {
     mod auto_vault;
-    mod cl_vault;
+    // mod cl_vault;
     mod cl_token;
 }
 
