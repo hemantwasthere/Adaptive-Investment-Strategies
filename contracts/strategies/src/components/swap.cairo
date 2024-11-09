@@ -1,9 +1,7 @@
 use starknet::{ContractAddress, get_contract_address};
 use strategies::utils::constants;
 use openzeppelin_token::erc20::interface::{
-    IERC20, 
-    IERC20Dispatcher, IERC20DispatcherTrait, 
-    ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    IERC20, IERC20Dispatcher, IERC20DispatcherTrait, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
 };
 
 
@@ -34,12 +32,12 @@ pub trait IAvnu<TContractState> {
 
 #[derive(Drop, Clone, Serde)]
 pub struct AvnuMultiRouteSwap {
-    pub token_from_address: ContractAddress, 
-    pub token_from_amount: u256, 
-    pub token_to_address: ContractAddress,   
-    pub token_to_amount: u256, 
-    pub token_to_min_amount: u256,  
-    pub beneficiary: ContractAddress,  
+    pub token_from_address: ContractAddress,
+    pub token_from_amount: u256,
+    pub token_to_address: ContractAddress,
+    pub token_to_amount: u256,
+    pub token_to_min_amount: u256,
+    pub beneficiary: ContractAddress,
     pub integrator_fee_amount_bps: u128,
     pub integrator_fee_recipient: ContractAddress,
     pub routes: Array<Route>
@@ -47,9 +45,9 @@ pub struct AvnuMultiRouteSwap {
 
 #[derive(Drop, Clone, Serde)]
 pub struct SwapInfoMinusAmount {
-    pub token_from_address: ContractAddress, 
-    pub token_to_address: ContractAddress,   
-    pub beneficiary: ContractAddress,  
+    pub token_from_address: ContractAddress,
+    pub token_to_address: ContractAddress,
+    pub beneficiary: ContractAddress,
     pub integrator_fee_amount_bps: u128,
     pub integrator_fee_recipient: ContractAddress,
     pub routes: Array<Route>
@@ -61,16 +59,17 @@ pub struct SwapInfoMinusAmount {
 #[generate_trait]
 pub impl AvnuMultiRouteSwapImpl of AvnuMultiRouteSwapTrait {
     fn swap(self: AvnuMultiRouteSwap) -> u256 {
-        avnuSwap(SwapInfoMinusAmount {
+        avnuSwap(
+            SwapInfoMinusAmount {
                 token_from_address: self.token_from_address,
                 token_to_address: self.token_to_address,
                 beneficiary: self.beneficiary,
                 integrator_fee_amount_bps: self.integrator_fee_amount_bps,
                 integrator_fee_recipient: self.integrator_fee_recipient,
                 routes: self.routes
-            }, 
-            self.token_from_amount, 
-            self.token_to_amount, 
+            },
+            self.token_from_amount,
+            self.token_to_amount,
             self.token_to_min_amount
         )
     }
@@ -85,12 +84,7 @@ pub impl SwapInfoMinusAmountImpl of SwapInfoMinusAmountTrait {
         token_to_amount: u256,
         token_to_min_amount: u256
     ) -> u256 {
-        avnuSwap(
-            self, 
-            token_from_amount, 
-            token_to_amount, 
-            token_to_min_amount
-        )
+        avnuSwap(self, token_from_amount, token_to_amount, token_to_min_amount)
     }
 }
 
@@ -100,7 +94,7 @@ fn avnuSwap(
     token_to_amount: u256,
     token_to_min_amount: u256
 ) -> u256 {
-    let toToken = ERC20ABIDispatcher {contract_address: swapInfo.token_to_address};
+    let toToken = ERC20ABIDispatcher { contract_address: swapInfo.token_to_address };
     let this = get_contract_address();
     let pre_bal = toToken.balanceOf(this);
 
@@ -108,18 +102,20 @@ fn avnuSwap(
     assert(swapInfo.beneficiary == this, 'invalid swap beneficiary');
 
     let avnuAddress = constants::AVNU_EX();
-    IERC20Dispatcher {contract_address: swapInfo.token_from_address}.approve(avnuAddress, token_from_amount);
-    let swapped = IAvnuDispatcher {contract_address: avnuAddress}.multi_route_swap(
-        swapInfo.token_from_address,
-        token_from_amount,
-        swapInfo.token_to_address,
-        token_to_amount,
-        token_to_min_amount,
-        swapInfo.beneficiary,
-        swapInfo.integrator_fee_amount_bps,
-        swapInfo.integrator_fee_recipient,
-        swapInfo.routes
-    );
+    IERC20Dispatcher { contract_address: swapInfo.token_from_address }
+        .approve(avnuAddress, token_from_amount);
+    let swapped = IAvnuDispatcher { contract_address: avnuAddress }
+        .multi_route_swap(
+            swapInfo.token_from_address,
+            token_from_amount,
+            swapInfo.token_to_address,
+            token_to_amount,
+            token_to_min_amount,
+            swapInfo.beneficiary,
+            swapInfo.integrator_fee_amount_bps,
+            swapInfo.integrator_fee_recipient,
+            swapInfo.routes
+        );
     assert(swapped, 'Swap failed');
 
     let post_bal = toToken.balanceOf(this);

@@ -2,9 +2,9 @@ use starknet::{ContractAddress};
 
 //
 // Re-uses zkLend's oracle middleware contract to interact with
-// Pragma. 
+// Pragma.
 // https://github.com/zkLend/zklend-v1-core/blob/master/src/default_price_oracle.cairo
-// 
+//
 // We deploy the came classhash of contract
 // https://starkscan.co/contract/0x023fb3afbff2c0e3399f896dcf7400acf1a161941cfb386e34a123f228c62832#read-write-contract-sub-write
 //
@@ -69,7 +69,9 @@ pub trait IPragmaOracle<TContractState> {
 
 #[starknet::interface]
 pub trait IPragmaNostraMock<TContractState> {
-    fn get_spot_median(self: @TContractState, pair_id: felt252) -> (felt252, felt252, felt252, felt252);
+    fn get_spot_median(
+        self: @TContractState, pair_id: felt252
+    ) -> (felt252, felt252, felt252, felt252);
     fn get_spot_with_USD_hop(
         self: @TContractState,
         base_currency_id: felt252,

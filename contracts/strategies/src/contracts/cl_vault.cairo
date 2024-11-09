@@ -12,7 +12,7 @@ mod CLVault {
     use strategies::utils::math::Math;
     use strategies::utils::helpers::ERC20Helper;
     use strategies::utils::errors::Errors;
-    use strategies::utils::constants::Constants::{LENDING, DEX, DECIMALS};
+    use strategies::utils::constants::Constants::{TWO_POWER_128, DECIMALS};
 
     use openzeppelin::token::erc721::interface::{ERC721ABIDispatcher, ERC721ABIDispatcherTrait};
     // use openzeppelin::introspection::src5::SRC5Component;
@@ -184,11 +184,12 @@ mod CLVault {
             } else { // Amount of token a is zero
             // Split this amount and do swap
             }
-            // @note >> Once swap is ready, using above conditions get primary_token_amount and secondary_token_amount
-            // Update the new bounds
+            // @note >> Once swap is ready, using above conditions get primary_token_amount and
+            // secondary_token_amount Update the new bounds
             self.bounds_settings.write(new_bounds);
             // Calculate new liquidity
-            let new_liquidity = let liquidity = self._calculate_liquidity(primary_token_amount, secondary_token_amount); 
+            let new_liquidity = self
+                ._calculate_liquidity(primary_token_amount, secondary_token_amount);
             // Approve the EKubo Position contract
             // deposit in new range
             IEkuboDispatcher { contract_address: ekubo_positions_ctr }
@@ -237,6 +238,22 @@ mod CLVault {
 
         fn get_cl_token(self: @ContractState) -> ContractAddress {
             return self.cl_token.read();
+        }
+
+        fn get_price(self: @ContractState, sqrtRatio: u256) -> u256 {
+            assert(sqrtRatio > 0, 'Invalid sqrtRatio');
+            // Price = ( sqrtRatio / 2**128 )**2
+            let price = sqrtRatio / TWO_POWER_128;
+            return (price * price);
+        }
+
+        fn split_primary_token(self: @ContractState, primary_token_amount: u256) -> (u256, u256) {
+            let (sqrtRatioA, sqrtRatioB, sqrtRatioCurrent) = self.get_sqrt_values();
+            let a_primary = primary_token_amount
+                * (sqrtRatioB - sqrtRatioCurrent)
+                / (sqrtRatioB - sqrtRatioA);
+            let b_secondary = (primary_token_amount - a_primary) / self.get_price();
+            return (a_primary, b_secondary);
         }
 
         fn handle_fees(ref self: ContractState, sqrtA: u128, sqrtB: u128, sqrtCurrent: u128) {
