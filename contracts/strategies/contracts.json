@@ -1,1 +1,13 @@
-{"class_hashes":{"AutoVault":"0x700ea559ca90fea6d33e70428bf26518abd2319e37126db15416f65ed360305","CLVault":"0x2102ae41322488e0d5f1a1a1fa7d4821567121c2eabfd7c5ab8e0357d16713d","CLToken":"0x6150a7f0fe61de734d477994a84d4dd373afec6fdfde7f64e86d072a8ea0eb3"},"contracts":{"CLToken":"0x78b01d3aa5f9fb146770bd54d5db01a48d665f5b6ddd5586008a6a1cdc37c1f","CLVault":"0x759f5260ba7d69caa61576614e6f014c7bf62f0771dceb4185e2fc7169b0cce","HarvestInvestStrat":"0x4a9633fb3a13db449563a5074514ad965920c3ef42c0126a094bd0377c492b4","AutoVault":"0x739346315f6886f1413f8497d42e64cd62037188476951735b691ee81d657cd"}}
+{
+    "class_hashes": {
+        "AutoVault": "0xca0be26cac40c6b323622d21de1c492c73404ff45d8f20da9e187b20e10791",
+        "CLVault": "0x2102ae41322488e0d5f1a1a1fa7d4821567121c2eabfd7c5ab8e0357d16713d",
+        "CLToken": "0x6150a7f0fe61de734d477994a84d4dd373afec6fdfde7f64e86d072a8ea0eb3"
+    },
+    "contracts": {
+        "CLToken": "0x5f6d81cf172a5c0123a98febd8a80c1318ce3326d1b523382d58ae0ea36877d",
+        "CLVault": "0x2d608bab43e398db0cd71ed6f25d5dc41a351406dc7ee2d61952cf86de7b1",
+        "HarvestInvestStrat": "0x46379d7bac484d970dd63e0d8528aae6be473b30fd04d6d6ac603e6d48ca303",
+        "AutoVault": "0x142cdbe00acf31e7a0668aa805ef9594c1c28085201e54ee0b9bb3f624735a9"
+    }
+}

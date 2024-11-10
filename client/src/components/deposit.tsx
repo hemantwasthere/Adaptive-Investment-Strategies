@@ -1,13 +1,19 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAccount, useBalance } from "@starknet-react/core";
+import {
+  useAccount,
+  useBalance,
+  useReadContract,
+  useSendTransaction,
+} from "@starknet-react/core";
 import { motion } from "framer-motion";
 import { Info } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
+import erc20Abi from "@/abi/erc20.abi.json";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Form,
@@ -20,7 +26,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Contract, RpcProvider } from "starknet";
+import { userStore } from "@/store/user-store";
+import { Contract, RpcProvider, uint256 } from "starknet";
 
 const formSchema = z.object({
   ethAmount: z.string().refine(
@@ -35,9 +42,12 @@ const formSchema = z.object({
 export type FormValues = z.infer<typeof formSchema>;
 
 const Deposit: React.FC = () => {
-  const [ethAmount, setEthAmount] = React.useState("");
+  const [ethAmount, setEthAmount] = React.useState("0");
 
-  const { address, account } = useAccount();
+  const { setLendingData, setDexData } = userStore();
+
+  const { address } = useAccount();
+
   const { data } = useBalance({
     address,
   });
@@ -50,39 +60,57 @@ const Deposit: React.FC = () => {
     mode: "onChange",
   });
 
+  const provider = new RpcProvider({
+    nodeUrl: "http://0.0.0.0:5050/rpc",
+  });
+
+  const contract = new Contract(
+    erc20Abi,
+    "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7",
+    provider,
+  );
+
+  const call1 = useMemo(() => {
+    console.log(ethAmount, "ethAmount");
+    return contract.populate("approve", [
+      "0x142cdbe00acf31e7a0668aa805ef9594c1c28085201e54ee0b9bb3f624735a9",
+
+      uint256.bnToUint256((Number(ethAmount) * 1.5 * 10 ** 18).toFixed(0)),
+    ]);
+  }, [ethAmount]);
+
+  const { sendAsync } = useSendTransaction({
+    calls: [call1],
+  });
+
   const onSubmit = async (values: FormValues) => {
     const { ethAmount } = values;
+
+    if (!address) return;
+
+    setEthAmount(BigInt(ethAmount).toString());
+    setLendingData(ethAmount);
+    setDexData(ethAmount);
+
+    setTimeout(async () => {
+      const res = await sendAsync();
+      console.log(res);
+    }, 1000);
   };
+
+  const { data: balance } = useReadContract({
+    abi: erc20Abi,
+    functionName: "balance_of",
+    address:
+      "0x142cdbe00acf31e7a0668aa805ef9594c1c28085201e54ee0b9bb3f624735a9",
+    args: [address],
+  });
+
+  console.log(balance);
 
   React.useEffect(() => {
     if (!address) setEthAmount("");
   }, [address]);
-
-  // const PRIVATE_KEY =
-  //   "0x0574ba4998dd9aedf1c4d6e56b747b29256a795bc3846437d121cd64b972bdd8";
-
-  const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS!;
-  const provider = new RpcProvider({
-    nodeUrl: "http://0.0.0.0:5050/rpc",
-  });
-  // const account = new Account(
-  //   provider,
-  //   "0x05d3a8f378500497479d3a16cfcd54657246dc37da8270b52e49319fac139939",
-  //   PRIVATE_KEY,
-  // );
-  // const contract = new Contract(abi, CONTRACT_ADDRESS, account);
-
-  // async function callContract() {
-  //   const res = await contract.get_balance();
-  //   console.log(res.toString());
-  // }
-
-  // async function writeToContract() {
-  //   contract.connect(account);
-  //   const myCall = contract.populate("increase_balance", [35]);
-  //   const res = await contract.increase_balance(myCall.calldata);
-  //   console.log(res);
-  // }
 
   return (
     <div className="h-full">

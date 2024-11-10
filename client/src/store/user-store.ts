@@ -6,6 +6,12 @@ interface UserStoreProps {
   setAddress: (address: string) => void;
   lastWallet: string;
   setLastWallet: (lastWallet: string) => void;
+
+  lendingData: string;
+  setLendingData: (lending_data: string) => void;
+
+  dexData: string;
+  setDexData: (dex_data: string) => void;
 }
 
 export const userStore = create<UserStoreProps>(
@@ -26,5 +32,9 @@ export const userStore = create<UserStoreProps>(
     setAddress: (address: string) => set({ address }),
     lastWallet: "",
     setLastWallet: (lastWallet: string) => set({ lastWallet }),
+    lendingData: "",
+    setLendingData: (lendingData: string) => set({ lendingData }),
+    dexData: "",
+    setDexData: (dexData: string) => set({ dexData }),
   }),
 );
