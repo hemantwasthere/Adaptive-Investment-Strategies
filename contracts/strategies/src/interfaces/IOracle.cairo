@@ -64,7 +64,6 @@ pub trait IPragmaOracle<TContractState> {
         typeof: SimpleDataType,
         expiration_timestamp: Option::<u64>
     ) -> PragmaPricesResponse;
-    // fn set_mock_price()
 }
 
 #[starknet::interface]

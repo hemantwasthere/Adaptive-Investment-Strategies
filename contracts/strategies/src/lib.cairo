@@ -1,5 +1,7 @@
 mod contracts {
     mod auto_vault;
+    mod cl_vault;
+    mod cl_token;
 }
 
 mod interfaces {
@@ -7,11 +9,19 @@ mod interfaces {
     pub mod IERC20Camel;
     pub mod IERC4626;
     pub mod oracle;
-    // pub mod ICLVault;
+    pub mod ICLVault;
+    pub mod IOracle;
+    pub mod IERC20Strat;
+    pub mod IEkuboCore;
+    pub mod IEkuboPositions;
+    pub mod IEkuboPositionsNFT;
+    pub mod ERC4626Strategy;
+    pub mod IEkuboNFT;
 }
-mod libs {}
+
 mod utils {
     pub mod math;
+    pub mod helpers;
     pub mod errors;
     pub mod constants;
 }

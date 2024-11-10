@@ -1,0 +1,13 @@
+{
+    "class_hashes": {
+        "AutoVault": "0xca0be26cac40c6b323622d21de1c492c73404ff45d8f20da9e187b20e10791",
+        "CLVault": "0x2102ae41322488e0d5f1a1a1fa7d4821567121c2eabfd7c5ab8e0357d16713d",
+        "CLToken": "0x6150a7f0fe61de734d477994a84d4dd373afec6fdfde7f64e86d072a8ea0eb3"
+    },
+    "contracts": {
+        "CLToken": "0x5f6d81cf172a5c0123a98febd8a80c1318ce3326d1b523382d58ae0ea36877d",
+        "CLVault": "0x2d608bab43e398db0cd71ed6f25d5dc41a351406dc7ee2d61952cf86de7b1",
+        "HarvestInvestStrat": "0x46379d7bac484d970dd63e0d8528aae6be473b30fd04d6d6ac603e6d48ca303",
+        "AutoVault": "0x142cdbe00acf31e7a0668aa805ef9594c1c28085201e54ee0b9bb3f624735a9"
+    }
+}

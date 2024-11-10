@@ -1,0 +1,28 @@
+{
+  "name": "strategies",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@avnu/avnu-sdk": "^2.1.1",
+    "assert": "^2.1.0",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
+    "fs": "^0.0.1-security",
+    "qs": "^6.13.0",
+    "starknet": "^6.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0"
+  }
+}
